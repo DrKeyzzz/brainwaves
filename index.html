@@ -86,9 +86,9 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 #wall{justify-content:flex-start;align-items:center}
 #tune{flex-direction:row;align-items:stretch;justify-content:center;gap:18px;padding:64px 16px 16px}
 .tn-panel{width:min(400px,100%);align-self:center;flex:none;max-height:calc(100vh - 80px);overflow:auto}
-.tn-stage{flex:1 1 auto;min-width:0;position:relative}
+.tn-stage{flex:0 0 auto;position:relative;height:calc(100vh - 84px);aspect-ratio:160/500;max-width:calc(100vw - 470px);align-self:center}
 #tn-svg{position:absolute;inset:0;width:100%;height:100%}
-@media (max-width:859px){#tune{flex-direction:column-reverse;align-items:center;gap:8px;padding-top:112px;overflow:auto}.tn-panel{width:min(520px,100%);max-height:none}.tn-stage{width:100%;flex:1 1 0;min-height:230px}}
+@media (max-width:859px){#tune{flex-direction:column-reverse;align-items:center;gap:8px;padding-top:112px;overflow:auto}.tn-panel{width:min(520px,100%);max-height:none}.tn-stage{height:52vh;max-width:100%;flex:none}}
 .tn-status{min-height:44px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#0a1124;border:1px solid var(--line);font-size:14px;color:var(--mut);line-height:1.4}
 .tn-status b{color:#fff}.tn-status.ok{border-color:var(--ok);color:var(--ok)}.tn-status.no{border-color:#ffb25e;color:#ffd9a8}
 .tn-ear{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.tn-ear .btn{flex:1;white-space:nowrap}
@@ -328,7 +328,9 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 .ppath .gap.half{background:var(--qc)}
 .ppath .gap.half span{color:var(--qc);text-shadow:0 0 8px var(--qc)}
 .ppath .pcard{width:clamp(58px,15vw,96px);height:58px;margin:0 5px;border-radius:14px;border:1px solid #33467c;background:#121b38;display:grid;place-items:center;font:800 21px Inter,sans-serif;color:var(--mut);cursor:pointer;transition:all .15s}
-.ppath .pcard.on{background:#e8f1ff22;border-color:#e8f1ff;box-shadow:0 0 22px #cfe0ff88;color:#fff;transform:translateY(-3px)}
+.ppath .pcard{transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .18s,background .18s}
+.ppath .pcard.on{background:#e8f1ff33;border-color:#fff;box-shadow:0 0 30px #cfe0ffcc,0 0 60px #cfe0ff66;color:#fff;transform:translateY(-14px) scale(1.28);z-index:2}
+.ppath .pcard.rev.on{background:color-mix(in srgb,var(--fc) 55%,#121b38);border-color:#fff;color:#fff;box-shadow:0 0 0 3px var(--fc),0 0 34px var(--fc),0 0 80px var(--fc);text-shadow:0 0 14px #fff}
 .ppath .pcard.slot{border:2px dashed #e8f1ff;color:#e8f1ff;box-shadow:0 0 18px #cfe0ff55}
 .ppath .pcard.rev{color:var(--fc);border:2px solid var(--fc);box-shadow:0 0 22px color-mix(in srgb,var(--fc) 60%,transparent);background:color-mix(in srgb,var(--fc) 26%,#121b38);text-shadow:0 0 12px color-mix(in srgb,var(--fc) 80%,transparent)}
 .ppath .pcard.miss{color:var(--ink);background:#3a1424}
@@ -374,6 +376,47 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 .sr-rep:disabled{opacity:.4}
 .sr-exit{position:absolute;left:50%;transform:translateX(-50%);bottom:14px}
 @media (max-width:520px){.sr-hud{top:104px}.sr-big{min-width:110px;padding:14px}}
+/* Tuner redesign: mode choice, string chips, three steps */
+#tn-modes h2{margin:4px 0 12px}
+.tn-mode{display:block;width:100%;text-align:left;margin:0 0 10px;padding:16px 16px 14px 62px;position:relative;border-radius:18px;border:1px solid var(--line);background:linear-gradient(#131d3c,#0c1430)}
+.tn-mode:hover{border-color:var(--acc);box-shadow:0 0 22px #48e0c833}
+.tn-mode .ic{position:absolute;left:16px;top:14px;font-size:30px}
+.tn-mode b{display:block;font-size:19px}.tn-mode span:not(.ic){display:block;color:var(--mut);font-size:13px;margin-top:3px;line-height:1.4}
+.tn-top{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin:2px 0 10px}.tn-top b{color:var(--ink)}#tn-score{margin-left:auto;color:#f4e063;font-weight:700}
+.linkish{background:none;border:0;color:var(--acc2);font:600 13px Inter,sans-serif;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.tn-strings{display:flex;gap:6px;margin:0 0 6px;flex-wrap:wrap}
+.tn-chip{min-width:42px;padding:6px 8px 4px;border-radius:12px;border:1px solid var(--line);background:#0b1226;font:800 15px Inter,sans-serif;line-height:1.1}
+.tn-chip small{display:block;font:600 10px Inter,sans-serif;color:var(--mut)}
+.tn-chip.on{border-color:#fff;box-shadow:0 0 14px #ffffff55}.tn-chip.ring{border-color:#5fe3a4;box-shadow:0 0 18px #5fe3a4;transform:translateY(-3px) scale(1.12);transition:transform .15s}.tn-chip.done{border-color:var(--ok);color:var(--ok)}.tn-chip.done small{color:#f4e063}
+.tn-steps{list-style:none;margin:6px 0 10px;padding:0;display:grid;gap:4px}
+.tn-steps li{padding:7px 10px;border-radius:10px;color:var(--mut);font-size:14px;border:1px solid transparent}
+.tn-steps li b{color:var(--mut);margin-right:4px}.tn-steps li small{color:var(--mut);margin-left:4px}
+.tn-steps li.now{color:#fff;border-color:var(--acc);background:#48e0c814;box-shadow:0 0 14px #48e0c822}.tn-steps li.now b{color:var(--acc)}
+.tn-steps li.past{opacity:.6}.tn-steps li.past b{color:var(--ok)}.tn-steps li.past b::after{content:' ✓';color:var(--ok)}
+#tn-meter{margin:0 0 10px}#tn-meter.green .tn-bar{box-shadow:0 0 18px #5fe3a4}
+#tn-check{width:100%;margin-top:10px}
+.tn-res{margin:2px 0 12px}
+.tn-res-bar{position:relative;height:118px;border-radius:16px;background:radial-gradient(ellipse at 50% 40%,#0f2a3a,#0a1124 70%);border:1px solid var(--line);overflow:hidden}
+.tn-res-bar .zone{position:absolute;top:10px;bottom:30px;transform:translateX(-50%);left:50%;border-radius:10px}
+.tn-res-bar .z10{width:20%;background:#f4e06314}.tn-res-bar .z6{width:12%;background:#f4e06322}.tn-res-bar .z3{width:6%;background:#5fe3a433;box-shadow:0 0 18px #5fe3a455}
+.tn-res-bar .ticks{position:absolute;left:0;right:0;top:56px;height:12px;background:repeating-linear-gradient(90deg,#8da0c455 0 1px,transparent 1px 10%)}
+.tn-res-bar .gap{position:absolute;top:58px;height:8px;border-radius:4px;transition:left .7s cubic-bezier(.2,1.4,.4,1),width .7s cubic-bezier(.2,1.4,.4,1)}
+.tn-res-bar .gap.good{background:linear-gradient(90deg,#5fe3a4,#f4e063);box-shadow:0 0 14px #5fe3a4}.tn-res-bar .gap.meh{background:#ffb25e;box-shadow:0 0 14px #ffb25e}.tn-res-bar .gap.bad{background:#ff6b8b;box-shadow:0 0 16px #ff6b8b}
+.tn-res-bar .gap span{position:absolute;left:50%;top:-24px;transform:translateX(-50%);white-space:nowrap;font:800 13px Inter,sans-serif;color:#fff;text-shadow:0 1px 6px #000}
+.tn-res-bar i{position:absolute;transform:translateX(-50%)}
+.tn-res-bar .tgt{left:50%;top:44px;width:4px;height:36px;border-radius:2px;background:var(--ok);box-shadow:0 0 14px var(--ok);animation:tnTgt 1.4s ease-in-out infinite}
+.tn-res-bar .tgt b{position:absolute;top:-30px;left:50%;transform:translateX(-50%);font:900 16px Inter,sans-serif;color:var(--ok);text-shadow:0 0 10px var(--ok)}
+@keyframes tnTgt{50%{box-shadow:0 0 26px var(--ok),0 0 44px #5fe3a466}}
+.tn-res-bar .you{top:50px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#cfe0ff 50%,#7aa2ff);box-shadow:0 0 18px #cfe0ff,0 0 36px #7aa2ff88;transition:left .7s cubic-bezier(.2,1.4,.4,1)}
+.tn-res-bar .you b{position:absolute;top:30px;left:50%;transform:translateX(-50%);font:800 12px Inter,sans-serif;color:#fff}
+.tn-res-bar .you.far::after{content:'off the scale';position:absolute;top:-18px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 10px Inter,sans-serif;color:#ff6b8b}
+.tn-res-bar span.fl,.tn-res-bar span.sh{position:absolute;bottom:7px;font-size:11px;color:var(--mut)}.tn-res-bar .fl{left:10px}.tn-res-bar .sh{right:10px}
+.tn-res-bar .rstars{position:absolute;right:12px;top:8px;font-size:22px;color:#f4e063;text-shadow:0 0 12px #f4e063;opacity:0}
+.tn-res-bar .rstars.pop{animation:tnStars .9s .45s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes tnStars{0%{opacity:0;transform:scale(.2) rotate(-20deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+.tn-foot{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;margin-top:14px}
+#tn-svg.strum{animation:tnStrum 1.5s ease-out}
+@keyframes tnStrum{20%{filter:drop-shadow(0 0 22px #5fe3a4)}100%{filter:none}}
 </style>
 </head>
 <body>
@@ -424,27 +467,35 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 <section class="screen" id="tune" hidden>
   <aside class="card tn-panel">
     <span class="eyebrow" id="tn-eye">Guitar</span>
-    <h2 id="tn-title">Pick a peg</h2>
-    <p class="sub" id="tn-sub">Click a peg on the headstock to choose a string.</p>
-    <div class="tn-status" id="tn-status" role="status" aria-live="polite"></div>
-    <div id="tn-meter" hidden><div class="tn-bar"><i id="tn-needle"></i><b></b></div><div class="tn-ml"><span>flat</span><span>in tune</span><span>sharp</span></div></div>
-    <div class="tn-ear" id="tn-ear">
-      <button class="btn sm" type="button" id="tn-target">🎯 Hear the target<kbd>Space</kbd></button>
-      <button class="btn sm" type="button" id="tn-mine">🎸 Pluck my string<kbd>P</kbd></button>
+    <div id="tn-modes">
+      <h2>How do you want to tune?</h2>
+      <button type="button" class="tn-mode" data-m="visual"><span class="ic">👀</span><b>Visual tuner</b><span>A needle shows how close you are. Get it in the green and the string locks in. Practice, no score.</span></button>
+      <button type="button" class="tn-mode" data-m="test"><span class="ic">👂</span><b>Test yourself</b><span>Ears only, no needle. Earn up to 3 stars per string. Your best score is saved.</span></button>
     </div>
-    <div class="tn-turn">
-      <button class="turn" type="button" id="tn-loose">⟲<span>Loosen</span><small>← or ↓</small></button>
-      <button class="turn" type="button" id="tn-tight">⟳<span>Tighten</span><small>→ or ↑</small></button>
+    <div id="tn-play" hidden>
+      <div class="tn-top"><b id="tn-mode-name">Visual tuner</b><button type="button" class="linkish" id="tn-switch">change</button><span id="tn-score"></span></div>
+      <div class="tn-strings" id="tn-strings" role="group" aria-label="Strings"></div>
+      <h2 id="tn-title">String 1</h2>
+      <ol class="tn-steps" id="tn-steps"><li data-k="1"><b>①</b> Listen <kbd>hold Space</kbd></li><li data-k="2"><b>②</b> Turn the peg <small>drag it up or down, or use the arrow keys</small></li><li data-k="3" id="tn-step3"><b>③</b> Check it <kbd>Enter</kbd></li></ol>
+      <div id="tn-meter" hidden><div class="tn-bar"><i id="tn-needle"></i><b></b></div><div class="tn-ml"><span>flat</span><span>in tune</span><span>sharp</span></div></div>
+      <div class="tn-res" id="tn-res" hidden>
+        <div class="tn-res-bar">
+          <div class="zone z10"></div><div class="zone z6"></div><div class="zone z3"></div>
+          <div class="ticks"></div>
+          <div class="gap" id="tn-gap"><span id="tn-gap-l"></span></div>
+          <i class="tgt"><b id="tn-res-note">G3</b></i>
+          <i class="you" id="tn-res-you"><b>you</b></i>
+          <span class="fl">◀ flat · too low</span><span class="sh">too high · sharp ▶</span>
+          <div class="rstars" id="tn-res-stars"></div>
+        </div>
+      </div>
+      <div class="tn-status" id="tn-status" role="status" aria-live="polite"></div>
+      <div class="tn-ear"><button class="btn sm" type="button" id="tn-target" title="Hold to hear the target">🎯 Target <kbd>hold Space</kbd></button><button class="btn sm" type="button" id="tn-mine" title="Hold to hear your string">🎸 My string <kbd>hold P</kbd></button></div>
+      <button class="btn big sm2" type="button" id="tn-check">Check this string <kbd>Enter</kbd></button>
+      <div class="tn-foot"><button type="button" class="linkish" id="tn-both" hidden>Both together</button><button type="button" class="linkish" id="tn-reset">Detune again</button><button type="button" class="linkish" id="tn-back">← Instruments</button></div>
     </div>
-    <div class="row" style="margin-top:8px"><button class="btn big sm2" type="button" id="tn-check">Check this string<kbd>Enter</kbd></button></div>
-    <details class="adv" id="tn-adv"><summary>Advanced options</summary>
-      <div class="row" style="margin-top:4px"><button class="btn sm" type="button" id="tn-both">〰 Both together<kbd>B</kbd></button><button class="btn sm" type="button" id="tn-fine" aria-pressed="false">Small turns: off</button></div>
-      <p class="advh">How close counts as in tune</p><div class="advg" id="tn-tol"></div>
-      <label class="advon"><input type="checkbox" id="tn-show"> Always show the tuning needle (it turns on by itself after 2 misses on a string)</label>
-    </details>
-    <div class="row"><button class="btn sm" type="button" id="tn-reset">Detune again</button><button class="btn sm" type="button" id="tn-back">← Instruments</button></div>
   </aside>
-  <div class="tn-stage" id="tn-stage"><svg id="tn-svg" viewBox="0 0 240 512" role="img" aria-label="The instrument's headstock with a peg for each string"></svg></div>
+  <div class="tn-stage" id="tn-stage"><svg id="tn-svg" viewBox="40 0 160 500" role="img" aria-label="The instrument's headstock with a peg for each string"></svg></div>
 </section>
 
 <!-- practice picker -->
@@ -933,7 +984,7 @@ $('w-form').addEventListener('submit', async e => {
     finally { $('w-go').disabled = false; $('w-go').textContent = 'Pull up a chair'; }
   }
   setProfile(withClasses({ first, init, icon: pickedIcon() }, classes));
-  $('welcome').hidden = true; afterWho(); playIntro();   // the Brainwaves sound, the first time this student signs in
+  $('welcome').hidden = true; afterWho(); playIntro();   // signing in counts as a click, so the intro can start here if it has not yet
 });
 $('w-solo').addEventListener('change', e => { $('w-code').disabled = e.target.checked; if (e.target.checked) { $('w-code').value = ''; $('w-more').innerHTML = ''; } syncAddBtn(); });
 $('w-form').addEventListener('input', e => { if (e.target.matches('#w-code, #w-more input')) { const c = cleanCode(e.target.value); if (c !== e.target.value) e.target.value = c; } });
@@ -1014,19 +1065,19 @@ const REGIONS = [
   { id: 'intervals', name: 'Auditory association area', game: 'Intervals', short: 'Intervals', blurb: 'Two notes play. Name the distance between them.', color: '#48c9f0', ready: true },
   { id: 'chords', name: 'Limbic system', game: 'Chord Colors', short: 'Chord Colors', blurb: 'Hear the feeling of major, minor and more.', color: '#ff7a8a', ready: true },
   { id: 'progressions', name: 'Prefrontal cortex', game: 'Progressions', short: 'Progressions', blurb: 'Four chords play. Name each chord after the first.', color: '#b58cff', ready: true },
-  { id: 'voice', name: 'Motor and speech areas', game: 'Pick a Voice', short: 'Pick a Voice', blurb: 'Hear a chord. Sing the note it asks for.', color: '#ffb25e', ready: true },
+  { id: 'voice', name: 'Motor and speech areas', game: 'Pick a Voice', short: 'Pick a Voice', blurb: 'Hear a note or chord, then sing your note back.', color: '#ffb25e', ready: true },
   { id: 'tuner', name: 'Cerebellum', game: 'Tuner', short: 'Tuner', blurb: 'Pick an instrument and tune its strings by ear.', color: '#f4e063', ready: true },
   { id: 'scales', name: 'Parietal lobe', game: 'Scales and modes', short: 'Scales', blurb: 'A scale plays. Name it, from major and minor to every mode.', color: '#ff6fd8', ready: true },
 ];
 /* what the hover card on the brain says about each game */
 const REGION_INFO = {
-  synapse: { skill: 'Pitch: hearing tiny differences', about: 'Two notes play. Was the second one sharp or flat? A run dives you down a nerve fiber: every right answer shoots you deeper and the notes get closer, from 50 cents down to 1.', facts: ['3 lives', '2 replays a run', 'No levels in a run'] },
+  synapse: { skill: 'Pitch: hearing tiny differences', about: 'Two notes play. Was the second one sharp or flat? A run dives you down a nerve fiber: every right answer shoots you deeper and the notes get closer, from 50 cents down to 1. How deep can you go?', facts: ['3 lives', '2 replays a run', 'No levels in a run'] },
   intervals: { skill: 'Intervals', about: 'Two notes play. Name the distance between them, from a 2nd to an octave. Later levels play them going down, and both at once.', facts: ['6 levels', '7 questions a level', 'Hear it again any time'] },
   chords: { skill: 'Chord qualities', about: 'A chord plays. Is it bright, dark, tense or dreamy? Name it, from major and minor up to every kind of 7th chord. The brain lights up in the chord\'s color.', facts: ['8 levels', '7 questions a level', '3 lives'] },
-  progressions: { skill: 'Chord progressions', about: 'Four chords play. The first is home (I). Name each chord after it, one at a time: I, IV, V, vi and more, in major and minor keys.', facts: ['6 levels', 'Every key', '3 lives'] },
+  progressions: { skill: 'Chord progressions', about: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare yours with the question, then press Submit. I, IV, V, vi and more, in major and minor keys.', facts: ['6 levels', 'Every key', '3 lives'] },
   scales: { skill: 'Scales and modes', about: 'A scale plays up and back down. Name it, from major and minor to all seven modes, pentatonics, blues, whole tone and diminished.', facts: ['8 levels', '14 scales', 'Every key'] },
-  voice: { skill: 'Singing in tune', about: 'A chord plays and one note is louder. Hold the mic button and sing that note. It starts with single notes and ends with four-voice chords.', facts: ['9 levels', 'Uses your microphone', 'Hints on harder levels'] },
-  tuner: { skill: 'Tuning by ear', about: 'Pick a guitar, bass, ukulele, violin, viola or cello off the wall. Every string starts out of tune. Listen and turn the pegs until it matches.', facts: ['6 instruments', 'Practice, no score'] },
+  voice: { skill: 'Singing in tune', about: 'Hear it, then sing it. First you sing back a single note. Later a chord plays and the screen shows which note is yours (top, middle or bottom). Hold the mic button and hold that note steady until it locks in.', facts: ['9 levels', 'Uses your microphone', 'Headphones help'] },
+  tuner: { skill: 'Tuning by ear', about: 'Pick an instrument off the wall. Every string starts out of tune. Practice with the Visual tuner, or Test yourself by ear and earn up to 3 stars per string.', facts: ['6 instruments', 'Visual or by ear', 'Earn stars'] },
 };
 const FLOORS = [
   { name: 'Wide',     cents: 50, mult: 1.0,  color: '#ff7a8a' },
@@ -1179,7 +1230,7 @@ const Web = (() => {
   // macro brain (side view, front on the right), coordinates in "brain units"
   let bn = [], be = [], litSet = new Set(), focus = -1, madj = null, msig = [], mflash = [], nextSig = 0, lastSigMs = 0;   // msig: electric signals racing through the whole brain
   const CENTERS = [[0.26, 0.07], [-0.30, -0.18], [-0.02, 0.08], [0.50, -0.16], [0.14, -0.38], [-0.35, 0.30], [-0.14, -0.40]];   // auditory cortex, association area, limbic system, prefrontal, motor and speech, cerebellum, parietal lobe (model faces right)
-  const LABELS = [[1.1, 0.1, 'l'], [-0.95, -0.28, 'r'], [1.1, 0.56, 'l'], [1.1, -0.38, 'l'], [0.3, -0.82, 'c'], [-0.95, 0.5, 'r'], [-0.6, -0.78, 'c']];
+  const LABELS = [[1.1, 0.1, 'l'], [-0.95, -0.28, 'r'], [1.1, 0.56, 'l'], [1.1, -0.38, 'l'], [0.3, -0.68, 'c'], [-0.95, 0.5, 'r'], [-0.62, -0.66, 'c']];
   const CD = CENTERS.map(c => [-c[0], c[1]]), LD = LABELS.map(l => [-l[0], l[1], l[2] === 'l' ? 'r' : l[2] === 'r' ? 'l' : 'c']);   // the model is drawn facing right; on screen it is mirrored so the face looks left
   // camera: u = 0 close-up web, 1 whole brain
   let u = 1, from = 1, to = 1, t0 = 0, dur = 1, resolve = null, tgtFloor = 0, lastU = 1, mid = 0;
@@ -1318,12 +1369,11 @@ const Web = (() => {
     // soft glow behind the brain
     const g = cx.createRadialGradient(ccx, ccy, 0, ccx, ccy, sz * .8 * zoom); g.addColorStop(0, 'rgba(72,224,200,.07)'); g.addColorStop(1, 'rgba(72,224,200,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
     const tone = reg => { if (reg < 0) return { c: [122, 162, 255], a: .22 }; const lit = litSet.has(reg) || reg === focus || reg === hov; const col = FC[reg]; return lit ? { c: col, a: reg === focus || reg === hov ? .75 + .25 * Math.sin(t * 2.4) : .7 } : { c: [122, 162, 255], a: .2 }; };
-    {   // head outline: faint, fading out down the neck
-      const S1 = sz * zoom, pt = q => [ccx + (-q[0] - fx) * S1, ccy + (q[1] - fy) * S1], h0 = pt([0, -0.6])[1], h1 = pt([0, 1.05])[1], ha = alpha * sm(.3, 1, e);
-      const gr = cx.createLinearGradient(0, h0, 0, h1); gr.addColorStop(0, 'rgba(190,215,255,.55)'); gr.addColorStop(.7, 'rgba(190,215,255,.45)'); gr.addColorStop(1, 'rgba(190,215,255,0)');
-      cx.save(); cx.globalAlpha = ha; cx.beginPath(); HEAD.forEach((q, n) => { const c = pt(q); n ? cx.lineTo(c[0], c[1]) : cx.moveTo(c[0], c[1]); });
-      const fg = cx.createLinearGradient(0, h0, 0, h1); fg.addColorStop(0, 'rgba(150,190,255,.07)'); fg.addColorStop(.75, 'rgba(150,190,255,.04)'); fg.addColorStop(1, 'rgba(150,190,255,0)'); cx.fillStyle = fg; cx.fill();
-      cx.strokeStyle = gr; cx.lineWidth = 2; cx.lineJoin = 'round'; cx.stroke(); cx.restore();
+    {   // the brain's shape, filled solid dark: the background waves go behind it instead of showing through
+      const S1 = sz * zoom, pt = q => [ccx + (-q[0] - fx) * S1, ccy + (q[1] - fy) * S1];
+      cx.save(); cx.fillStyle = '#03060c'; cx.strokeStyle = '#03060c'; cx.lineWidth = 14 * Math.min(3, zoom); cx.lineJoin = 'round';
+      cx.beginPath(); OUTLINE.forEach((q, n) => { const c = pt(q); n ? cx.lineTo(c[0], c[1]) : cx.moveTo(c[0], c[1]); }); cx.closePath(); cx.fill(); cx.stroke();
+      const ce = pt([-0.35, 0.3]); cx.beginPath(); cx.ellipse(ce[0], ce[1], .2 * S1 + 6, .15 * S1 + 6, .12, 0, 6.29); cx.fill(); cx.restore();
     }
     for (const [i, j] of be) {
       const a = bn[i], b = bn[j]; if (a.reg !== b.reg && (a.reg >= 0 || b.reg >= 0)) { /* edges between regions stay faint */ }
@@ -1342,14 +1392,19 @@ const Web = (() => {
     // floor labels when the whole brain is showing
     const la = sm(.82, 1, e);
     if (la > 0) {
-      const wide = W >= 860; cx.font = `600 ${wide ? 12 : 11}px Inter, system-ui, sans-serif`; cx.textBaseline = 'middle';
+      const wide = W >= 860; cx.font = `800 ${wide ? 15 : 12}px Inter, system-ui, sans-serif`; cx.textBaseline = 'middle';
       REGIONS.forEach((f, i) => {
         const on = litSet.has(i) || i === focus || i === hov, c = CD[i], A = LD[i], px = ccx + c[0] * sz, py = ccy + c[1] * sz, lx = (wide ? 1 : 0) ? ccx + A[0] * sz : Math.max(16, Math.min(W - 16, ccx + A[0] * sz)), ly = ccy + A[1] * sz;
-        lastLab[i] = [lx, ly + (A[2] === 'c' ? (A[1] > 0 ? 10 : -10) : 0), wide, A[2]]; cx.globalAlpha = alpha * la * (on ? 1 : .6); cx.strokeStyle = on ? f.color : '#4a5a85'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(px, py); cx.lineTo(lx, ly); cx.stroke();
-        cx.fillStyle = on ? f.color : '#6a7aa5'; cx.beginPath(); cx.arc(px, py, 3.2, 0, 6.28); cx.fill();
-        cx.fillStyle = on ? '#e8f1ff' : '#8da0c4';
-        if (wide) { cx.textAlign = A[2] === 'l' ? 'left' : A[2] === 'r' ? 'right' : 'center'; cx.fillText(`${f.short}${f.ready ? '' : ' · soon'}`, lx + (A[2] === 'l' ? 6 : A[2] === 'r' ? -6 : 0), ly + (A[2] === 'c' ? (A[1] > 0 ? 10 : -10) : 0)); }
-        else { cx.textAlign = 'center'; cx.beginPath(); cx.arc(lx, ly, 9, 0, 6.28); cx.fillStyle = on ? f.color : '#26325a'; cx.fill(); cx.fillStyle = on ? '#06101e' : '#8da0c4'; cx.fillText(String(i + 1), lx, ly + .5); }
+        const lyc = ly + (A[2] === 'c' ? (A[1] > 0 ? 18 : -18) : 0); lastLab[i] = [lx, lyc, wide, A[2]]; cx.globalAlpha = alpha * la * (on ? 1 : .75); cx.strokeStyle = f.color; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(px, py); cx.lineTo(lx, ly); cx.stroke();
+        cx.fillStyle = f.color; cx.beginPath(); cx.arc(px, py, 3.6, 0, 6.28); cx.fill();
+        if (wide) {   // each game's name in a dark box that glows in the game's color (brighter on hover)
+          const label = `${f.short}${f.ready ? '' : ' · soon'}`, tw = cx.measureText(label).width, bw = tw + 28, bh = 32, bx = A[2] === 'l' ? lx + 4 : A[2] === 'r' ? lx - 4 - bw : lx - bw / 2, by = lyc - bh / 2;
+          lastLab[i].push(bx, bw);
+          cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 26 : 14; cx.fillStyle = 'rgba(3,6,12,.86)'; cx.beginPath(); cx.roundRect(bx, by, bw, bh, 10); cx.fill();
+          cx.lineWidth = on ? 2.5 : 1.8; cx.strokeStyle = f.color; cx.stroke(); cx.restore();
+          cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 10 : 4; cx.fillText(label, bx + bw / 2, lyc + 1); cx.restore();
+        }
+        else { cx.textAlign = 'center'; cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 18 : 10; cx.beginPath(); cx.arc(lx, ly, 12, 0, 6.28); cx.fillStyle = f.color; cx.fill(); cx.restore(); cx.fillStyle = '#06101e'; cx.fillText(String(i + 1), lx, ly + .5); }
       });
     }
     cx.restore();
@@ -1390,6 +1445,56 @@ const Web = (() => {
     cx.restore();
   }
 
+  // the background: a page of small five-line music staffs in Matrix green, stacked top to bottom like manuscript paper. Each staff's
+  // lines waver gently and now and then cross a neighbor, with little sparks where they cross; small notes float along every staff
+  // from left to right, riding its lines and spaces. Behind the brain, dimmed behind the games, still for reduced motion.
+  let staffs = [], rainW = 0, rainH = 0, lastSt = 0, notes = [], sparksBg = [], nextNote = 0;
+  const NOTE_CH = ['♩', '♪', '♫', '♬'];
+  function rainBuild() {
+    rainW = W; rainH = H; const gap = Math.max(6, Math.min(10, H / 90)), pitch = gap * 4 + gap * 5.5, n = Math.max(3, Math.floor((H - gap * 2) / pitch));
+    const top = (H - (n - 1) * pitch) / 2;
+    staffs = Array.from({ length: n }, (_, s2) => ({ gap, mid: top + s2 * pitch, v: 26 + Math.random() * 22, lines: [0, 1, 2, 3, 4].map(i => ({ off: (i - 2) * gap, k1: (1 + Math.random() * 1.6) * 2 * Math.PI / W, k2: (2.5 + Math.random() * 2) * 2 * Math.PI / W, ph1: Math.random() * 6.3, ph2: Math.random() * 6.3, sp: .25 + Math.random() * .3, sw: Math.random() * 6.3 })) }));
+    notes = []; sparksBg = [];
+    staffs.forEach(st => { for (let x = W + 10; x > -20; x -= 34 + Math.random() * 46) notes.push(mkNote(st, x)); });   // start full, like a page of music
+  }
+  function mkNote(st, x) { return { st, x, pos: Math.floor(Math.random() * 9), ch: NOTE_CH[Math.floor(Math.random() * 4)], sz: st.gap * (2.2 + Math.random() * .6), bob: Math.random() * 6.3 }; }
+  function lineY(st, L, x, t) {   // a line's height at x: a gentle waver, sometimes swelling enough to cross its neighbor
+    const g = st.gap, swell = .18 + .62 * Math.pow(Math.max(0, Math.sin(t * .23 + L.sw)), 3);
+    return st.mid + L.off + g * swell * Math.sin(x * L.k1 - t * L.sp + L.ph1) + g * .12 * Math.sin(x * L.k2 - t * L.sp * 1.7 + L.ph2);
+  }
+  function staffY(st, pos, x, t) {   // pos 0..8: even = on a line (0 = bottom line), odd = in the space between
+    const lo = Math.floor(pos / 2), hi = Math.min(4, Math.ceil(pos / 2));
+    return (lineY(st, st.lines[4 - lo], x, t) + lineY(st, st.lines[4 - hi], x, t)) / 2;
+  }
+  function drawRain(ms) {
+    if (rainW !== W || rainH !== H) rainBuild();
+    const t = reduceMotion ? 0 : ms / 1000, dt = Math.min(.05, Math.max(0, t - lastSt)), step = 10; lastSt = t;
+    cx.save(); cx.globalAlpha = S.mode === 'home' ? 1 : .3; cx.lineJoin = 'round'; cx.lineCap = 'round';
+    cx.strokeStyle = 'rgba(57,255,154,.42)'; cx.lineWidth = 1; cx.shadowColor = '#39ff9a'; cx.shadowBlur = 5;
+    staffs.forEach(st => {
+      const ys = st.lines.map(L => { const arr = []; for (let x = 0; x <= W + step; x += step) arr.push(lineY(st, L, x, t)); return arr; });
+      ys.forEach(arr => { cx.beginPath(); arr.forEach((y, i) => (i ? cx.lineTo(i * step, y) : cx.moveTo(0, y))); cx.stroke(); });
+      if (!reduceMotion) for (let l = 0; l < 4; l++) for (let i = 1; i < ys[l].length; i++) {   // where two neighboring lines cross, sparks fly
+        const d0 = ys[l][i - 1] - ys[l + 1][i - 1], d1 = ys[l][i] - ys[l + 1][i];
+        if (d0 * d1 < 0 && Math.random() < .3) { const x = i * step - step / 2, y = (ys[l][i] + ys[l + 1][i]) / 2; for (let k = 0; k < 2; k++) { const an = Math.random() * 6.28, v = 25 + Math.random() * 70; sparksBg.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, life: .3 + Math.random() * .3, t: 0 }); } }
+      }
+    });
+    cx.shadowBlur = 0;
+    if (!reduceMotion) {
+      if (sparksBg.length > 260) sparksBg.splice(0, sparksBg.length - 260);
+      staffs.forEach(st => { const first = notes.reduce((m, n) => (n.st === st ? Math.min(m, n.x) : m), Infinity); if (first > -20 + 34) notes.push(mkNote(st, first - 34 - Math.random() * 46)); });   // keep each staff full: a new note comes in at the left
+    }
+    cx.globalCompositeOperation = 'lighter';
+    sparksBg = sparksBg.filter(p => (p.t += dt) < p.life);
+    sparksBg.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; const k = 1 - p.t / p.life, r = 1.6 * k + .5, g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 3); g.addColorStop(0, `rgba(232,255,244,${k})`); g.addColorStop(1, 'rgba(57,255,154,0)'); cx.fillStyle = g; cx.beginPath(); cx.arc(p.x, p.y, r * 3, 0, 6.28); cx.fill(); });
+    cx.globalCompositeOperation = 'source-over';
+    cx.textAlign = 'center'; cx.textBaseline = 'alphabetic'; cx.shadowColor = '#39ff9a'; cx.shadowBlur = 8; cx.fillStyle = 'rgba(120,255,180,.85)';
+    notes = notes.filter(n => n.x < W + 20);
+    notes.forEach(n => { if (!reduceMotion) n.x += n.st.v * dt;   // every note on a staff moves together, like a scrolling score
+      const y = staffY(n.st, n.pos, n.x, t) + Math.sin(t * 2 + n.bob); cx.font = `${n.sz}px 'Segoe UI Symbol', 'Apple Symbols', 'Noto Music', serif`; cx.fillText(n.ch, n.x, y + n.sz * .28); });   // the note head sits on its line or space
+    cx.restore();
+  }
+
   function frame(ms) {
     requestAnimationFrame(frame);
     const t = ms / 1000;
@@ -1398,7 +1503,7 @@ const Web = (() => {
       if (k >= 1) { u = to; const r = resolve; resolve = null; if (r) r(); }
     }
     for (let i = 0; i < 3; i++) accNow[i] += (accTo[i] - accNow[i]) * .06;
-    const bg = cx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * .7); bg.addColorStop(0, '#0e1a3a'); bg.addColorStop(1, '#050813'); cx.fillStyle = bg; cx.fillRect(0, 0, W, H);
+    cx.fillStyle = '#020507'; cx.fillRect(0, 0, W, H); drawRain(ms);   // near-black, with falling music symbols
     const e = ease(u), moving = Math.abs(u - lastU) > 1e-5; lastU = u;
     if (e < 1) drawMicro(ms, t, 1 - sm(.08, .62, e), Math.pow(.09, e));
     if (e > 0) drawMacro(t, sm(.12, .72, e), e);
@@ -1431,7 +1536,7 @@ const Web = (() => {
     // which floor is under the pointer (whole-brain view only): its label, or the nearest neuron of that region
     hit(x, y) {
       if (!lastP || u < .98) return -1;
-      for (let i = 0; i < lastLab.length; i++) { const l = lastLab[i]; if (!l) continue; if (l[2]) { const x0 = l[3] === 'l' ? l[0] : l[3] === 'r' ? l[0] - 150 : l[0] - 75; if (x > x0 - 4 && x < x0 + 154 && Math.abs(y - l[1]) < 12) return i; } else if (Math.hypot(x - l[0], y - l[1]) < 15) return i; }
+      for (let i = 0; i < lastLab.length; i++) { const l = lastLab[i]; if (!l) continue; if (l[2]) { const x0 = l[4] != null ? l[4] : l[3] === 'l' ? l[0] : l[3] === 'r' ? l[0] - 150 : l[0] - 75, w = l[5] != null ? l[5] : 150; if (x > x0 - 4 && x < x0 + w + 4 && Math.abs(y - l[1]) < 18) return i; } else if (Math.hypot(x - l[0], y - l[1]) < 17) return i; }
       let best = -1, bd = 26 * 26;
       for (let i = 0; i < lastP.length; i++) { const n = bn[i]; if (n.reg < 0) continue; const d = (lastP[i][0] - x) ** 2 + (lastP[i][1] - y) ** 2; if (d < bd) { bd = d; best = n.reg; } }
       return best;
@@ -1548,7 +1653,7 @@ async function enterRegion(i) {
   show(null); Web.accent(r.color); Web.lit([i], i);
   await Web.go('micro', { floor: i, dur: 1.9 }); S.busy = false; if (r.id === 'tuner') showWall(); else showLadder();
 }
-const LAD_SUB = { synapse: 'Two notes play. Was the second one sharp or flat? A run has no levels: it starts wide and gets closer with every right answer. 3 lives, 2 replays, 4 seconds to answer.', intervals: 'Two notes play. Name the distance between them. Seven questions a level, and 3 lives.', progressions: 'Four chords play. The first is home (I). Name the other three, one at a time. Seven questions a level, and 3 lives.', scales: 'A scale plays up and back down. Name it: major, minor, every mode, pentatonics, blues and more. Seven questions a level, and 3 lives.', chords: 'A chord plays. What color is it? Tap the feeling that matches. Seven questions a level, and 3 lives.', voice: 'A chord plays. Hold the button and sing the note it asks for. Lock in 7 notes to climb a level.' };
+const LAD_SUB = { synapse: 'Two notes play. Was the second one sharp or flat? A run has no levels: it starts wide and gets closer with every right answer. 3 lives, 2 replays, 4 seconds to answer. How deep can you go?', intervals: 'Two notes play. Name the distance between them. Seven questions a level, and 3 lives.', progressions: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare, then Submit. Seven questions a level, and 3 lives.', scales: 'A scale plays up and back down. Name it: major, minor, every mode, pentatonics, blues and more. Seven questions a level, and 3 lives.', chords: 'A chord plays. What color is it? Tap the feeling that matches. Seven questions a level, and 3 lives.', voice: 'Listen, then hold the mic button and sing. Early levels: one note. Later levels: a chord plays and you sing the note it points to. Hold it steady for a second to lock it in. Lock in 7 to climb.' };
 function showLadder() {
   S.mode = 'ladder'; { const r = REGIONS[S.region]; $('lad-eye').textContent = r.name; $('lad-title').textContent = r.game; $('lad-sub').textContent = LAD_SUB[r.id]; } $('ladder').classList.remove('trans'); $('lb-btn').hidden = isV(); Web.accent(REGIONS[S.region].color); Web.lit([S.region], S.region);
   show('ladder'); drawLadder(); selUI();
@@ -1971,102 +2076,210 @@ function showWall() {
   $('wall-grid').innerHTML = Object.keys(INST).map(id => `<button type="button" class="inst" data-i="${id}" style="--fc:${REGIONS[S.region].color}"><svg viewBox="0 0 240 512" aria-hidden="true">${headstockSVG(id, false)}</svg>${INST[id].name}<small class="${TN.done[id] ? 'tdone' : ''}">${INST[id].strings.length} strings${TN.done[id] ? ' · tuned ✓' : ''}</small></button>`).join('');
 }
 function detune(i) {
-  const [name, f0] = INST[TN.id].strings[i]; let c = (25 + Math.random() * 55) * (Math.random() < .5 ? -1 : 1); if (Math.abs(c) < TN.tol * 3) c = TN.tol * 4 * Math.sign(c || 1);
+  const [name, f0] = INST[TN.id].strings[i]; let c = (25 + Math.random() * 55) * (Math.random() < .5 ? -1 : 1); if (Math.abs(c) < 15) c = 16 * Math.sign(c || 1);
   return { name, f0, cents: c, tuned: false, fails: 0, help: false };
 }
 function openInstrument(id) {
-  TN.id = id; TN.sel = -1; TN.strs = INST[id].strings.map((_, i) => detune(i)); S.mode = 'tune'; show('tune');
-  $('tn-svg').innerHTML = headstockSVG(id, true); $('tn-eye').textContent = INST[id].name; drawTune();
+  TN.id = id; TN.sel = -1; TN.mode = null; TN.strs = INST[id].strings.map((_, i) => detune(i)); S.mode = 'tune'; show('tune'); tLoad(id);
+  $('tn-svg').innerHTML = headstockSVG(id, true); $('tn-eye').textContent = INST[id].name; drawTune();   // first: Visual tuner or Test yourself
 }
+/* ---------- Tuner (redesign 2026-10-16): pick Visual tuner (practice, a needle, strings lock in by themselves)
+   or Test yourself (ears only, Check gives 1-3 stars per string, best score kept per instrument).
+   One string at a time: ① listen, ② turn the peg, ③ check; finished strings move on to the next by themselves. ---------- */
+const TN_STARS = [[3, 3], [6, 2], [10, 1]];   // cents off -> stars in Test yourself
+const TN_LOCK = 4;                             // Visual tuner: within 4 cents for one second locks the string
 function drawTune() {
-  const I = INST[TN.id], st = TN.strs[TN.sel], tuned = TN.strs.filter(x => x.tuned).length;
+  const I = INST[TN.id], st = TN.strs[TN.sel], n = TN.strs.length, tuned = TN.strs.filter(x => x.tuned).length, vis = TN.mode === 'visual';
+  $('tn-modes').hidden = !!TN.mode; $('tn-play').hidden = !TN.mode;
   document.querySelectorAll('#tn-svg .pg').forEach(g => { const i = +g.dataset.s; g.classList.toggle('sel', i === TN.sel); g.classList.toggle('ok', TN.strs[i].tuned); });
   document.querySelectorAll('#tn-svg .pg').forEach(g => { const k = g.querySelector('.kg'); if (k) k.style.transform = `rotate(${TN.strs[+g.dataset.s].cents * 4}deg)`; });
   document.querySelectorAll('#tn-svg .strg').forEach(l => l.classList.toggle('sel', +l.dataset.s === TN.sel));
-  $('tn-title').textContent = st ? `String ${TN.sel + 1}: ${st.name}` : 'Pick a peg';
-  $('tn-sub').innerHTML = st ? 'Press <b>Space</b> to hear the target. Drag the peg up or down (or use the arrow keys) until your string matches. Press <b>Enter</b> to check.' : `Click a peg, or press 1 to ${TN.strs.length}, to choose a string.`;
-  ['tn-target', 'tn-mine', 'tn-both', 'tn-loose', 'tn-tight', 'tn-check'].forEach(id => { $(id).disabled = !st; });
-  $('tn-fine').textContent = 'Small turns: ' + (TN.fine ? 'on' : 'off'); $('tn-fine').setAttribute('aria-pressed', String(TN.fine));
-  $('tn-tol').innerHTML = [[8, 'Easy ±8¢'], [4, 'Normal ±4¢'], [2, 'Strict ±2¢']].map(([v, t]) => `<button type="button" data-t="${v}" aria-pressed="${TN.tol === v}">${t}</button>`).join('');
-  const heat = !!st && (TN.show || st.help); $('tn-show').checked = TN.show; $('tn-meter').hidden = !heat;
-  document.querySelectorAll('#tn-svg .pg').forEach(g => { const t = TN.strs[+g.dataset.s], kn = g.querySelector('.kn'); if (t.tuned || !(TN.show || t.help)) kn.style.stroke = ''; else { const k = Math.min(1, Math.max(0, (Math.abs(t.cents) - TN.tol) / 45)); kn.style.stroke = `hsl(${Math.round(125 * (1 - k))} 90% 60%)`; } });
-  if (heat) $('tn-needle').style.left = (50 + Math.max(-60, Math.min(60, st.cents)) / 60 * 45) + '%';
-  if (tuned === TN.strs.length) { TN.done[TN.id] = true; setTnStatus(`<b>${I.name} is fully tuned.</b> Nice ears. Detune it to go again, or pick another instrument.`, 'ok'); }
+  if (!TN.mode) return;
+  $('tn-mode-name').textContent = vis ? '👀 Visual tuner' : '👂 Test yourself';
+  $('tn-strings').innerHTML = TN.strs.map((x, i) => `<button type="button" class="tn-chip${i === TN.sel ? ' on' : ''}${x.tuned ? ' done' : ''}" data-i="${i}">${x.name.replace(/\d/, '')}<small>${x.tuned ? (vis ? '✓' : '★'.repeat(x.stars) || '✓') : i + 1}</small></button>`).join('');
+  $('tn-title').textContent = st ? `String ${TN.sel + 1}: ${st.name}` : 'All strings done';
+  // the three steps: the one to do next glows
+  const step = !st || st.tuned ? 0 : !st.heard ? 1 : !st.turned ? 2 : 3;
+  document.querySelectorAll('#tn-steps li').forEach(li => { const k = +li.dataset.k; li.classList.toggle('now', k === step); li.classList.toggle('past', k < step); });
+  $('tn-step3').innerHTML = vis ? '<b>③</b> Hold it in the green' : '<b>③</b> Check it <kbd>Enter</kbd>';
+  $('tn-check').hidden = vis; $('tn-check').disabled = !st || st.tuned;
+  ['tn-target', 'tn-mine'].forEach(id => { $(id).disabled = !st; });
+  $('tn-meter').hidden = !vis || !st;
+  if (vis && st) { $('tn-needle').style.left = (50 + Math.max(-60, Math.min(60, st.cents)) / 60 * 45) + '%'; $('tn-meter').classList.toggle('green', Math.abs(st.cents) <= TN_LOCK); }
+  $('tn-score').innerHTML = vis ? `${tuned} of ${n} tuned` : `★ ${TN.strs.reduce((a, x) => a + (x.stars || 0), 0)} of ${n * 3}`;
+  // the Visual tuner never shows a colored peg in Test yourself
+  document.querySelectorAll('#tn-svg .pg').forEach(g => { const t = TN.strs[+g.dataset.s], kn = g.querySelector('.kn'); if (t.tuned || !vis) kn.style.stroke = ''; else { const k = Math.min(1, Math.max(0, (Math.abs(t.cents) - TN_LOCK) / 45)); kn.style.stroke = `hsl(${Math.round(125 * (1 - k))} 90% 60%)`; } });
 }
 function setTnStatus(html, cls) { const e = $('tn-status'); e.innerHTML = html; e.className = 'tn-status ' + (cls || ''); }
+/* the Tuner's sound: real recordings of each instrument (tonejs-instruments, CC BY 3.0), re-pitched to the exact frequency,
+   through a warm room reverb. The target and the student's string use the same recording, so the gap between them is exact. */
+const T_SMP = 'https://nbrosowsky.github.io/tonejs-instruments/samples/';
+const T_SETS = {
+  guitar: [['guitar-acoustic', 'E2 A2 D3 G3 B3 E4']], bass: [['bass-electric', 'E1 As1 Cs2 G2']], ukulele: [['guitar-nylon', 'Gs4 Cs4 E4 A4']],
+  violin: [['violin', 'G3 C4 E4 A4 E5']], viola: [['cello', 'C3 G3'], ['violin', 'C4 E4 A4']], cello: [['cello', 'C2 G2 D3 A3']],
+};
+const T_NIX = { C: 0, Cs: 1, D: 2, Ds: 3, E: 4, F: 5, Fs: 6, G: 7, Gs: 8, A: 9, As: 10, B: 11 };
+const tMidi = n => { const [, p, o] = n.match(/^([A-G]s?)(\d)$/); return 12 * (+o + 1) + T_NIX[p]; };
+const T_BUF = {}, T_LOAD = {}; let T_FX = null;
+function tLoad(id) {   // fetch this instrument's few recordings once
+  const c = ac(); if (!c || !T_SETS[id]) return;
+  T_SETS[id].forEach(([dir, names]) => names.split(' ').forEach(n => { const url = T_SMP + dir + '/' + n + '.mp3'; if (T_BUF[url] || T_LOAD[url]) return;
+    T_LOAD[url] = fetch(url).then(r => r.arrayBuffer()).then(b => c.decodeAudioData(b)).then(buf => { const d = buf.getChannelData(0); let p = 0; for (let i = 0; i < d.length; i += 16) p = Math.max(p, Math.abs(d[i])); T_BUF[url] = { buf, m: tMidi(n), norm: .55 / Math.max(.05, p) }; }).catch(() => { delete T_LOAD[url]; }); }));
+}
+function tFx() {   // a warm room: dry plus a 2.2 s reverb
+  const c = ac(); if (T_FX && T_FX.c === c) return T_FX;
+  const out = c.createGain(), wet = c.createGain(), rev = c.createConvolver(), len = Math.floor(c.sampleRate * 2.2), ir = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let lp = 0; for (let i = 0; i < len; i++) { const k = i / len; lp = lp * (.25 + .7 * k) + (Math.random() * 2 - 1) * (1 - (.25 + .7 * k)); d[i] = lp * Math.pow(1 - k, 2.4); } }
+  rev.buffer = ir; wet.gain.value = .32; out.connect(c.destination); out.connect(rev); rev.connect(wet); wet.connect(c.destination);
+  return T_FX = { c, out };
+}
+function tNearest(f) {   // the recording for this instrument closest in pitch
+  const m = 69 + 12 * Math.log2(f / 440); let best = null;
+  (T_SETS[TN.id] || []).forEach(([dir, names]) => names.split(' ').forEach(n => { const x = T_BUF[T_SMP + dir + '/' + n + '.mp3']; if (x && (!best || Math.abs(x.m - m) < Math.abs(best.m - m))) best = x; }));
+  return best;
+}
 function pluck(f, dur = 1.9) {
-  const c = ac(); if (!c) return; const t = c.currentTime + .02, g = c.createGain();
-  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.26, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur); g.connect(c.destination);
+  const c = ac(); if (!c) return; const t = c.currentTime + .02, fx = tFx(), smp = tNearest(f);
+  if (smp) {   // a real string, re-pitched to exactly this frequency
+    const src = c.createBufferSource(), g = c.createGain(); src.buffer = smp.buf; src.playbackRate.value = f / (440 * Math.pow(2, (smp.m - 69) / 12));
+    const pk = .5 * smp.norm; g.gain.setValueAtTime(pk, t); g.gain.setValueAtTime(pk, t + Math.max(.2, dur - .35)); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(g); g.connect(fx.out); src.start(t); src.stop(t + dur + .05); return;
+  }
+  const g = c.createGain();   // until the recordings arrive (or with no internet): the old synthesized pluck, now with reverb
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.26, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur); g.connect(fx.out);
   [[1, 1], [2, .55], [3, .32], [4, .2]].forEach(([m, a], i) => { const o = c.createOscillator(), og = c.createGain(); o.type = i ? 'sine' : 'triangle'; o.frequency.value = f * m; og.gain.setValueAtTime(a * (f < 120 && i ? 1.7 : 1), t); og.gain.exponentialRampToValueAtTime(.0001, t + dur * (1 - i * .15)); o.connect(og); og.connect(g); o.start(t); o.stop(t + dur + .05); });
 }
 const myFreq = st => st.f0 * centsRatio(st.cents);
-function pickPeg(i) { ac(); TN.sel = i; const st = TN.strs[i]; setTnStatus(st.tuned ? `<b>String ${i + 1} is in tune.</b> You can still turn it and check again.` : 'Here is the target, then your string. Do they match?'); drawTune(); tnCompare(st); }
-// picking a string plays the target, then the student's string, so they are comparing right away
-function tnCompare(st) { pluck(st.f0, 1.3); clearTimeout(tnCompare.t); tnCompare.t = setTimeout(() => { if (TN.strs[TN.sel] === st) pluck(myFreq(st), 1.3); }, 1100); }
-function turnPeg(dir) {
-  const st = TN.strs[TN.sel]; if (!st) return; ac();
-  st.cents = Math.max(-200, Math.min(200, st.cents + dir * (TN.fine ? 1.5 : 7))); st.tuned = false;
-  pluck(myFreq(st), 1.1); setTnStatus(dir > 0 ? 'Tightened. Does it sound closer to the target?' : 'Loosened. Does it sound closer to the target?'); drawTune();
-}
-function checkPeg() {
-  const st = TN.strs[TN.sel]; if (!st) return;
-  if (Math.abs(st.cents) <= TN.tol) { st.tuned = true; st.fails = 0; Web.pulse(); cue(true); setTnStatus(`<b>In tune.</b> You are within ${TN.tol} cents of the target (${Math.abs(st.cents).toFixed(1)}¢ off).`, 'ok'); }
-  else {
-    st.fails++; cue(false); Web.bad();
-    if (st.fails === 1) setTnStatus('<b>Not quite yet.</b> You have one more try before the tuning needle turns on. Press <b>B</b> to hear both together and listen for the wobble.', 'no');
-    else { st.help = true; setTnStatus(`<b>Not quite.</b> The tuning needle is on for this string now. Bring it into the <b>green</b>${st.cents > 0 ? ' (it is sharp, so loosen)' : ' (it is flat, so tighten)'}, then check again.`, 'no'); }
+const T_BOWED = { violin: 1, viola: 1, cello: 1 };   // bowed strings keep sounding while held; plucked ones ring and fade
+const tHeld = {};   // the notes being held right now, by what is holding them ('space', 'p', 'btn')
+function holdStart(who, f) {
+  holdStop(who, true); const c = ac(); if (!c) return; const t = c.currentTime + .01, fx = tFx(), smp = tNearest(f), g = c.createGain(); g.connect(fx.out);
+  if (smp) {
+    const src = c.createBufferSource(); src.buffer = smp.buf; src.playbackRate.value = f / (440 * Math.pow(2, (smp.m - 69) / 12));
+    if (T_BOWED[TN.id]) { src.loop = true; src.loopStart = Math.min(.6, smp.buf.duration * .3); src.loopEnd = Math.max(src.loopStart + .3, smp.buf.duration - .25); }
+    const pk = .5 * smp.norm; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + .02); src.connect(g); src.start(t); tHeld[who] = { g, src, c };
+  } else {   // before the recordings arrive: a steady tone
+    const o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.2, t + .03); o.connect(g); o.start(t); tHeld[who] = { g, src: o, c };
   }
+}
+function holdStop(who, quick) {
+  const h = tHeld[who]; if (!h) return; delete tHeld[who]; const t = h.c.currentTime, d = quick ? .05 : .35;
+  h.g.gain.cancelScheduledValues(t); h.g.gain.setValueAtTime(Math.max(.0001, h.g.gain.value), t); h.g.gain.exponentialRampToValueAtTime(.0001, t + d); h.src.stop(t + d + .02);
+}
+addEventListener('keyup', e => { if (e.code === 'Space') holdStop('space'); if (e.key === 'p' || e.key === 'P') holdStop('p'); });
+addEventListener('blur', () => Object.keys(tHeld).forEach(k => holdStop(k)));
+function startTuneMode(m) { ac(); TN.mode = m; TN.t0 = performance.now(); TN.strs.forEach(x => { x.stars = 0; x.heard = x.turned = false; }); TN.finished = false; pickPeg(0); }
+function pickPeg(i) {
+  if (!TN.mode) return; ac(); if (TN.sel !== i) $('tn-res').hidden = true; TN.sel = i; const st = TN.strs[i];
+  setTnStatus(st.tuned ? `<b>String ${i + 1} is done.</b> Pick another string, or turn this one again.` : 'Here is the <b>target</b>, then <b>your string</b>. Do they match?');
+  drawTune(); if (!st.tuned) tnCompare(st);
+}
+// picking a string plays the target, then the student's string, so they are comparing right away
+function tnCompare(st) { st.heard = true; pluck(st.f0, 1.3); clearTimeout(tnCompare.t); tnCompare.t = setTimeout(() => { if (TN.strs[TN.sel] === st) pluck(myFreq(st), 1.3); }, 1100); drawTune(); }
+function turnPeg(dir, fine) {
+  const st = TN.strs[TN.sel]; if (!st) return; ac();
+  st.cents = Math.max(-200, Math.min(200, st.cents + dir * (fine ? 1.5 : 7))); st.turned = true; if (st.tuned && TN.mode === 'test') { st.tuned = false; st.stars = 0; }
+  $('tn-res').hidden = true; pluck(myFreq(st), 1.1); setTnStatus(TN.mode === 'visual' ? 'Watch the needle. Get it into the <b>green</b> and hold it there.' : (dir > 0 ? 'Tightened. Closer to the target? <b>Space</b> plays it again.' : 'Loosened. Closer to the target? <b>Space</b> plays it again.')); drawTune();
+}
+function lockString(st, stars) {   // a string is done: celebrate a little and move on to the next one by itself
+  st.tuned = true; st.stars = stars; TN.hold = 0; Web.pulse(); cue(true); drawTune();
+  const left = TN.strs.findIndex(x => !x.tuned);
+  if (left < 0) { tnFinish(); return; }
+  const at = TN.sel; setTimeout(() => { if (TN.sel === at && S.mode === 'tune') pickPeg(left); }, 1100);
+}
+function showResult(st) {   // after Check: the target in the middle, the student's string flies in to where it landed (±50 cents shown)
+  const c = Math.max(-50, Math.min(50, st.cents)), pos = 50 + c, off = Math.abs(st.cents), row = TN_STARS.find(([x]) => off <= x), you = $('tn-res-you'), gap = $('tn-gap');
+  $('tn-res-note').textContent = st.name; $('tn-res').hidden = false;
+  you.style.transition = 'none'; you.style.left = (c < 0 ? 0 : 100) + '%'; gap.style.transition = 'none'; gap.style.left = '50%'; gap.style.width = '0%';
+  you.classList.toggle('far', Math.abs(st.cents) > 50); void you.offsetWidth;   // start at the edge, then glide in
+  you.style.transition = ''; gap.style.transition = ''; you.style.left = pos + '%';
+  gap.style.left = Math.min(pos, 50) + '%'; gap.style.width = Math.abs(c) + '%'; gap.className = 'gap ' + (row ? 'good' : off > 25 ? 'bad' : 'meh');
+  $('tn-gap-l').textContent = off < 1 ? 'right on!' : `${Math.round(off)}¢ ${st.cents < 0 ? 'flat' : 'sharp'}`;
+  const sEl = $('tn-res-stars'); sEl.textContent = row ? '★'.repeat(row[1]) : ''; sEl.classList.remove('pop'); void sEl.offsetWidth; if (row) sEl.classList.add('pop');
+}
+function checkPeg() {   // Test yourself only: how close is it?
+  const st = TN.strs[TN.sel]; if (!st || TN.mode !== 'test' || st.tuned) return;
+  const off = Math.abs(st.cents), row = TN_STARS.find(([c]) => off <= c), side = st.cents < 0 ? 'flat (too low)' : 'sharp (too high)', amt = off < 1 ? 'right on' : `${Math.round(off)}¢ ${side}`;
+  showResult(st);
+  if (row) { setTnStatus(`<b>${'★'.repeat(row[1])}</b> You were ${amt}. ${row[1] === 3 ? 'Perfect ears!' : row[1] === 2 ? 'Very close!' : 'Close enough.'}`, 'ok'); lockString(st, row[1]); }
+  else { st.fails = (st.fails || 0) + 1; cue(false); Web.bad(); setTnStatus(`<b>Not yet.</b> You were ${amt}. ${st.cents < 0 ? '<b>Tighten</b>' : '<b>Loosen</b>'} ${off > 30 ? 'quite a bit' : 'a little'}, then check again.`, 'no'); drawTune(); }
+}
+function tnFinish() {   // every string is done: strum it and show the result
+  TN.finished = true; TN.done[TN.id] = true; const I = INST[TN.id], n = TN.strs.length;
+  // play the tuned strings one at a time, a second each, lighting each string and peg as it sounds
+  TN.strs.forEach((x, i) => setTimeout(() => {
+    if (S.mode !== 'tune') return; pluck(x.f0, 1.3);
+    document.querySelectorAll('#tn-strings .tn-chip').forEach((c, k) => c.classList.toggle('ring', k === i));
+    document.querySelectorAll('#tn-svg .strg').forEach(l => l.classList.toggle('sel', +l.dataset.s === i));
+    document.querySelectorAll('#tn-svg .pg').forEach(g => g.classList.toggle('sel', +g.dataset.s === i));
+  }, 600 + i * 1000));
+  setTimeout(() => { document.querySelectorAll('#tn-strings .tn-chip').forEach(c => c.classList.remove('ring')); $('tn-svg').classList.add('strum'); setTimeout(() => $('tn-svg').classList.remove('strum'), 1600); }, 600 + n * 1000);
+  if (TN.mode === 'visual') { setTnStatus(`<b>${I.name} is fully tuned!</b> Ready to try it by ear? Switch to <b>Test yourself</b>.`, 'ok'); drawTune(); return; }
+  const stars = TN.strs.reduce((a, x) => a + x.stars, 0), secs = Math.round((performance.now() - TN.t0) / 1000), key = 'tuner_best_v1:' + TN.id + ':' + sidKey();
+  let best = null; try { best = JSON.parse(localStorage.getItem(key) || 'null'); } catch {}
+  const better = !best || stars > best.stars || (stars === best.stars && secs < best.secs);
+  if (better) try { localStorage.setItem(key, JSON.stringify({ stars, secs })); } catch {}
+  MTG_HIST.run('tuner', { score: stars, level: n, acc: Math.round(100 * stars / (n * 3)) });
+  setTnStatus(`<b>${I.name} tuned by ear: ★ ${stars} of ${n * 3}</b> in ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}.${better ? ' <b>New best!</b>' : ` Your best: ★ ${best.stars} in ${Math.floor(best.secs / 60)}:${String(best.secs % 60).padStart(2, '0')}.`}`, 'ok');
   drawTune();
 }
+// Visual tuner: a string locks in by itself after a second in the green
+setInterval(() => {
+  if (S.mode !== 'tune' || TN.mode !== 'visual' || $('tune').hidden) return;
+  const st = TN.strs[TN.sel]; if (!st || st.tuned) { TN.hold = 0; return; }
+  if (Math.abs(st.cents) <= TN_LOCK) { if (!TN.hold) { TN.hold = performance.now(); setTnStatus('<b>In the green!</b> Hold it…', 'ok'); } else if (performance.now() - TN.hold > 1000) { setTnStatus(`<b>String ${TN.sel + 1} is in tune.</b> On to the next one.`, 'ok'); lockString(st, 0); } }
+  else TN.hold = 0;
+}, 100);
 $('wall-grid').addEventListener('click', e => { const b = e.target.closest('.inst'); if (b) openInstrument(b.dataset.i); });
 $('wall-back').onclick = goHome;
 $('tn-back').onclick = showWall;
-/* press and hold a peg, then drag: up tightens, down loosens, with the string sounding as you turn */
+/* press and hold a peg, then drag: up tightens, down loosens, with the string sounding as you turn (drag slowly or hold Shift for fine turns) */
 let drag = null;
 function dragTone(on, f) {
   const c = ac(); if (!c) return;
   if (on) {
     const g = c.createGain(), o1 = c.createOscillator(), o2 = c.createOscillator(); o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = f; o2.frequency.value = f * 2;
     const g2 = c.createGain(); g2.gain.value = .45; g.gain.setValueAtTime(.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(.14, c.currentTime + .05);
-    o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(c.destination); o1.start(); o2.start(); drag.audio = { g, o1, o2, c };
+    o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(tFx().out); o1.start(); o2.start(); drag.audio = { g, o1, o2, c };
   } else if (drag && drag.audio) { const { g, o1, o2, c } = drag.audio, t = c.currentTime; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(Math.max(.0001, g.gain.value), t); g.gain.exponentialRampToValueAtTime(.0001, t + .12); o1.stop(t + .15); o2.stop(t + .15); drag.audio = null; }
 }
 $('tn-svg').addEventListener('pointerdown', e => {
-  const g = e.target.closest('.pg'); if (!g) return;
-  const i = +g.dataset.s; ac(); if (TN.sel !== i) { TN.sel = i; drawTune(); setTnStatus('Drag up to tighten, down to loosen. Press <b>Space</b> any time to hear the target.'); }
-  const st = TN.strs[i]; drag = { y: e.clientY, c0: st.cents, moved: false, i, audio: null }; g.setPointerCapture && g.setPointerCapture(e.pointerId);
+  const g = e.target.closest('.pg'); if (!g || !TN.mode) return;
+  const i = +g.dataset.s; ac(); if (TN.sel !== i) { TN.sel = i; drawTune(); }
+  const st = TN.strs[i]; drag = { y: e.clientY, c0: st.cents, moved: false, i, audio: null, shift: e.shiftKey }; g.setPointerCapture && g.setPointerCapture(e.pointerId);
   e.preventDefault(); dragTone(true, myFreq(st));
 });
 $('tn-svg').addEventListener('pointermove', e => {
-  if (!drag) return; const st = TN.strs[drag.i], dy = drag.y - e.clientY; if (Math.abs(dy) > 3) drag.moved = true;
-  st.cents = Math.max(-200, Math.min(200, drag.c0 + dy * (TN.fine ? .12 : .55))); st.tuned = false;
+  if (!drag) return; const st = TN.strs[drag.i], dy = drag.y - e.clientY; if (Math.abs(dy) > 3) { drag.moved = true; st.turned = true; $('tn-res').hidden = true; }
+  st.cents = Math.max(-200, Math.min(200, drag.c0 + dy * (e.shiftKey ? .12 : .55))); if (st.tuned && TN.mode === 'test') { st.tuned = false; st.stars = 0; }
   if (drag.audio) drag.audio.o1.frequency.setTargetAtTime(myFreq(st), drag.audio.c.currentTime, .02), drag.audio.o2.frequency.setTargetAtTime(myFreq(st) * 2, drag.audio.c.currentTime, .02);
   drawTune();
 });
-function endDrag() { if (!drag) return; const was = drag; dragTone(false); drag = null; setTnStatus(was.moved ? 'Press <b>Space</b> for the target and <b>P</b> for your string. <b>Enter</b> checks it.' : 'Press and hold the peg, then drag <b>up to tighten</b> or <b>down to loosen</b>.'); }
+function endDrag() { if (!drag) return; const was = drag; dragTone(false); drag = null; if (was.moved) setTnStatus(TN.mode === 'visual' ? 'Get the needle into the <b>green</b> and hold it there.' : '<b>Space</b> plays the target, <b>P</b> your string. <b>Enter</b> checks it.'); drawTune(); }
 addEventListener('pointerup', endDrag); addEventListener('pointercancel', endDrag);
-$('tn-svg').addEventListener('keydown', e => { const g = e.target.closest('.pg'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pickPeg(+g.dataset.s); } });
-$('tn-target').onclick = () => { ac(); pluck(TN.strs[TN.sel].f0, 2.2); };
-$('tn-mine').onclick = () => { ac(); pluck(myFreq(TN.strs[TN.sel]), 2.2); };
-$('tn-both').onclick = () => { ac(); const st = TN.strs[TN.sel]; pluck(st.f0, 3); pluck(myFreq(st), 3); };
-$('tn-loose').onclick = () => turnPeg(-1); $('tn-tight').onclick = () => turnPeg(1);
+$('tn-svg').addEventListener('keydown', e => { const g = e.target.closest('.pg'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.stopPropagation(); pickPeg(+g.dataset.s); } });
+$('tn-modes').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) startTuneMode(b.dataset.m); });
+$('tn-switch').onclick = () => { TN.mode = null; TN.sel = -1; TN.strs = INST[TN.id].strings.map((_, i) => detune(i)); drawTune(); };
+$('tn-strings').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) pickPeg(+b.dataset.i); });
+['tn-target', 'tn-mine'].forEach(id => {   // press and hold to hear it, let go to stop
+  const b = $(id);
+  b.addEventListener('pointerdown', e => { const st = TN.strs[TN.sel]; if (!st || b.disabled) return; ac(); try { b.setPointerCapture(e.pointerId); } catch {} if (id === 'tn-target') { st.heard = true; drawTune(); } holdStart('btn', id === 'tn-target' ? st.f0 : myFreq(st)); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, () => holdStop('btn')));
+});
+$('tn-both').onclick = () => { const st = TN.strs[TN.sel]; if (!st) return; ac(); st.heard = true; pluck(st.f0, 3); pluck(myFreq(st), 3); drawTune(); };
 $('tn-check').onclick = checkPeg;
-$('tn-fine').onclick = () => { TN.fine = !TN.fine; drawTune(); };
-$('tn-reset').onclick = () => { TN.strs = INST[TN.id].strings.map((_, i) => detune(i)); TN.sel = -1; delete TN.done[TN.id]; setTnStatus('Every string is out of tune again.'); drawTune(); };
-$('tn-tol').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { TN.tol = +b.dataset.t; drawTune(); } });
-$('tn-show').onchange = () => { TN.show = $('tn-show').checked; drawTune(); };
+$('tn-reset').onclick = () => { TN.strs = INST[TN.id].strings.map((_, i) => detune(i)); TN.finished = false; TN.t0 = performance.now(); delete TN.done[TN.id]; setTnStatus('Every string is out of tune again.'); pickPeg(0); };
 addEventListener('keydown', e => {
-  if ($('tune').hidden || !$('welcome').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($('tune').hidden || !$('welcome').hidden || e.ctrlKey || e.metaKey || e.altKey || !TN.mode) return;
   if (e.target.closest && e.target.closest('input,select,textarea,summary')) return;
   const n = +e.key; if (n >= 1 && n <= TN.strs.length) { e.preventDefault(); pickPeg(n - 1); return; }   // number keys pick a string
   if (TN.sel < 0) return;
-  if (e.target.closest && e.target.closest('input[type=text]')) return;
-  if (e.key === ' ' || e.code === 'Space') { if (!e.repeat) $('tn-target').click(); e.preventDefault(); return; }
-  if (e.key === 'p' || e.key === 'P') { e.preventDefault(); $('tn-mine').click(); return; }
+  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) { const st = TN.strs[TN.sel]; st.heard = true; holdStart('space', st.f0); drawTune(); } return; }   // held: sounds until you let go
+  if (e.key === 'p' || e.key === 'P') { e.preventDefault(); if (!e.repeat) holdStart('p', myFreq(TN.strs[TN.sel])); return; }
   if (e.key === 'b' || e.key === 'B') { e.preventDefault(); $('tn-both').click(); return; }
   if (e.key === 'Enter') { e.preventDefault(); checkPeg(); return; }
-  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); if (e.shiftKey) { const f = TN.fine; TN.fine = true; turnPeg(1); TN.fine = f; } else turnPeg(1); }
-  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); if (e.shiftKey) { const f = TN.fine; TN.fine = true; turnPeg(-1); TN.fine = f; } else turnPeg(-1); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); turnPeg(1, e.shiftKey); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); turnPeg(-1, e.shiftKey); }
 });
 
 /* ---------- hover and click on the brain (home screen) ---------- */
@@ -2074,7 +2287,7 @@ addEventListener('keydown', e => {
   const tip = $('tip'); let cur = -1;
   const onHome = () => S.mode === 'home' && !$('home').hidden && $('pick').hidden && $('welcome').hidden && !S.busy;
   const skip = e => e.target.closest('.card, header, button, .who-pill, a');
-  function clear() { if (cur !== -1) { cur = -1; Web.hover(-1); tip.hidden = true; document.body.style.cursor = ''; } }
+  function clear() { if (cur !== -1) { cur = -1; Web.hover(-1); tip.hidden = true; tip.dataset.at = ''; document.body.style.cursor = ''; } }
   function tipHTML(r) {
     const inf = REGION_INFO[r.id] || {}, lv = { synapse: FLOORS, intervals: ILV, chords: CLV, voice: VLV }[r.id];
     let prog = '';
@@ -2089,7 +2302,8 @@ addEventListener('keydown', e => {
   function showTip(i, x, y) {
     const r = REGIONS[i];
     if (i !== cur) { cur = i; Web.hover(i); document.body.style.cursor = 'pointer'; tip.style.setProperty('--fc', r.color); tip.innerHTML = tipHTML(r); tip.hidden = false; }
-    const w = tip.offsetWidth, h = tip.offsetHeight;
+    if (tip.dataset.at === String(i)) return;   // the card stays put while you move around the same area
+    tip.dataset.at = String(i); const w = tip.offsetWidth, h = tip.offsetHeight;
     tip.style.left = Math.max(12, Math.min(innerWidth - w - 12, x + 16)) + 'px'; tip.style.top = Math.max(60, Math.min(innerHeight - h - 12, y + 16)) + 'px';
   }
   addEventListener('pointermove', e => {
@@ -2136,18 +2350,18 @@ function initApp() {
   show(null); Web.setU(0, 0); Web.go('macro', { dur: 2.4 }).then(() => { if (S.mode === 'home') show('home'); });   // the opening shot: zoom out from the neurons to the whole brain
 }
 function afterWho() { updateWho(); progCache = null; drawHome(); pullProg(); }
-/* the Brainwaves sign-in sound (bleeps, low strings on a fifth, the voice-over): plays once per student on this device.
-   Browsers only allow sound after a click or key press, so a student who arrives already signed in hears it on their first click. */
-let introAudio = null;
+/* the Brainwaves intro sound (bleeps, low strings on a fifth, the voice-over): plays every time the page opens (his call: "they love it").
+   Browsers often block sound until the first click or key press, so if starting right away is blocked it starts on the first click. */
+let introAudio = null, introDone = false;
 function playIntro() {
-  const p = getProfile(); if (!p) return; const k = 'bw_intro_played:' + sidOf(p);
-  try { if (localStorage.getItem(k)) return; } catch {}
+  if (introDone) return;
   try {
     introAudio = introAudio || new Audio('sounds/brainwaves-intro.m4a'); introAudio.volume = .9;
-    const pr = introAudio.play(); if (pr) pr.then(() => { try { localStorage.setItem(k, '1'); } catch {} }).catch(() => {});
+    const pr = introAudio.play(); if (pr) pr.then(() => { introDone = true; }).catch(() => {});
   } catch {}
 }
-['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if ($('welcome').hidden) playIntro(); }, true));
+playIntro();   // try right away; if the browser says no, the first click or key press below plays it
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => playIntro(), true));
 addEventListener('storage', e => { if (e.key === PROFILE_KEY) afterWho(); });
 /*@@BOOT@@*/
 /* MTG_TEST setup */ MTGTest.setup({ game: 'synapse', hide: ["#who-btn"], apply: () => { applySettingsFromUrl(); }, start: () => { startRun(); } }); /* /MTG_TEST setup */
@@ -2774,7 +2988,7 @@ async function pRound() {
     S.pRecent = [...recent.slice(-1), k]; S.cur = { type, k, tonic, notes: pScaleNotes(k, tonic), set: st.scales.map(x => 's:' + x) };
   } else {
     const ps = pPick(st.prog), hard = S.mode === 'run' && S.floor >= 4;   // the top levels allow one listen to your own answer
-    S.cur = { type, tonic, minor: !!ps.minor, chords: pVoice(pMakeProg(ps.chords, ps.minor), tonic), set: ps.chords.map(x => 'c:' + x), slot: 1, wrong: 0, picks: [null, null, null, null], sel: null, mineLeft: hard ? 1 : Infinity };
+    S.cur = { type, tonic, minor: !!ps.minor, chords: pVoice(pMakeProg(ps.chords, ps.minor), tonic), set: ps.chords.map(x => 'c:' + x), slot: 1, wrong: 0, picks: [null, null, null, null], sel: null, mineLeft: hard ? 1 : Infinity, silent: hard };
     S.cur.picks[0] = S.cur.chords[0].rn;
   }
   setFloorUI(); hudUI();
@@ -2800,7 +3014,7 @@ function pPlay(tok) {
   setTimeout(() => {
     if (S.tok !== tok) return; if (S.phase === 'listen') S.phase = 'answer';
     if (S.phase === 'answer') { document.querySelectorAll('#iansw .ib').forEach(b => { b.disabled = false; }); cCenter('?', S.cur.type === 's' ? 'Which scale?' : 'Build the progression'); }
-    $('ask').innerHTML = S.cur.type === 's' ? 'Which <b>scale</b> is it?' : 'Tap a chord to hear it. <b>Drag</b> it onto a <b>?</b> card (or tap the chord, then the card). <b>Submit</b> when all three are in.'; $('b-again').disabled = false; pMineUI(); pSlotUI();
+    $('ask').innerHTML = S.cur.type === 's' ? 'Which <b>scale</b> is it?' : S.cur.silent ? '<b>Hard mode:</b> chords stay silent when you tap them. Drag each one onto a <b>?</b> card by ear, then <b>Submit</b>.' : 'Tap a chord to hear it. <b>Drag</b> it onto a <b>?</b> card (or tap the chord, then the card). <b>Submit</b> when all three are in.'; $('b-again').disabled = false; pMineUI(); pSlotUI();
   }, dur * 1000);
 }
 function pReplay() {
@@ -2826,17 +3040,18 @@ function pAnswerScale(k) {
        : `It was <b style="color:${it.c}">${it.name.toLowerCase()}</b>. You picked ${PSC[k].name.toLowerCase()}. Hear both.`);
 }
 /* ---------- progressions: build your answer, compare it, then submit ---------- */
+const pSilent = () => !!(S.cur && S.cur.silent && S.phase === 'answer');   // the top two levels of a run: tapping a chord makes no sound
 function pChordAlone(rn) { return pVoice([rn], S.cur.tonic)[0]; }
 function pPickChord(rn, place) {   // hear a chord (and hold it, ready to drop on a card); the keyboard places it in the next empty card too
   const c = S.cur; if (!c || c.type !== 'p' || S.phase !== 'answer') return;
-  c.sel = rn; PAV.snd.newBus(); pPlayChord(pChordAlone(rn), .02, 1.2); CNET.fire(3);
+  c.sel = rn; if (!pSilent()) { PAV.snd.newBus(); pPlayChord(pChordAlone(rn), .02, 1.2); CNET.fire(3); }
   document.querySelectorAll('#iansw .ib').forEach(b => b.classList.toggle('sel', b.dataset.k === 'c:' + rn));
   if (place) { const i = c.picks.findIndex((x, k) => k > 0 && !x); if (i > 0) pPlace(i, rn, false); }
 }
 function pPlace(i, rn, sound = true) {
   const c = S.cur; if (!c || c.type !== 'p' || S.phase !== 'answer' || i < 1 || i > 3) return;
   c.picks[i] = rn; const card = document.querySelector(`#ppath .pcard[data-i="${i}"]`); card.textContent = rn; card.classList.add('filled');
-  if (sound) { PAV.snd.newBus(); pPlayChord(pChordAlone(rn), .02, 1.1); }
+  if (sound && !pSilent()) { PAV.snd.newBus(); pPlayChord(pChordAlone(rn), .02, 1.1); }
   pSlotUI(); $('b-psub').disabled = c.picks.some((x, k) => k > 0 && !x);
 }
 function pUnplaceLast() { const c = S.cur; if (!c || c.type !== 'p' || S.phase !== 'answer') return; for (let i = 3; i >= 1; i--) if (c.picks[i]) { c.picks[i] = null; const card = document.querySelector(`#ppath .pcard[data-i="${i}"]`); card.textContent = '?'; card.classList.remove('filled'); break; } pSlotUI(); $('b-psub').disabled = true; }
@@ -2885,6 +3100,7 @@ $('ppath').addEventListener('click', e => {   // tap a card: drop the chord you 
   const b = e.target.closest('.pcard'); if (!b || !isP() || !S.cur || S.cur.type !== 'p' || S.phase === 'listen') return;
   const i = +b.dataset.i, c = S.cur;
   if (S.phase === 'answer' && i > 0 && c.sel) { pPlace(i, c.sel); return; }
+  if (pSilent()) { $('ask').innerHTML = 'On this level the chords stay silent until you submit. Trust your ear!'; return; }
   const rn = S.phase === 'result' ? c.chords[i].rn : c.picks[i]; if (!rn) { $('ask').innerHTML = 'Tap a chord button first, then tap this card (or drag the chord here).'; return; }
   PAV.snd.newBus(); pPlayChord(S.phase === 'result' ? c.chords[i] : pChordAlone(rn), .02, 1.3); CNET.fire(3);
 });
