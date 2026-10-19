@@ -3216,7 +3216,7 @@ const SRUN = (() => {
     Object.assign(R, { cents: first, lives: 3, reps: 2, depth: 0, board: [] }); hud(); say(''); T.reset();
     try {   // the top 10 (your class if you are in one, otherwise the world) appear on the tunnel walls as names to pass
       const p = getProfile(), scope = p && p.classCode ? p.classCode : 'world';
-      fetchBoard(scope).then(rows => { R.board = rows.slice(0, 10).map((r, i) => ({ name: r.name, score: r.score, rank: i + 1 })).sort((a, b) => a.score - b.score); }).catch(() => {});
+      fetchBoard(scope).then(rows => { R.board = rows.slice(0, 10).map((r, i) => ({ name: r.name, score: r.score, rank: i + 1, dev: !!r.dev })).sort((a, b) => a.score - b.score); }).catch(() => {});
     } catch {}
     show(null); Web.lit([S.region], S.region); await Web.go('micro', { floor: S.region, dur: 1.2 });   // into the brain...
     show('srun'); await T.dive(); S.busy = false;   // ...and down the fiber: you are the signal
@@ -3311,7 +3311,7 @@ const SRUN = (() => {
       [...signs].sort((x, y) => y.z - x.z).forEach(sg => {   // far ones first, so near ones draw on top
         const zz = sg.z - depthZ, al = Math.max(0, Math.min(1, (30 - zz) / 7)), col = sg.pass ? '#fff' : `hsl(${h % 360} 100% 70%)`;
         if (zz > 30) return;
-        const label = `#${sg.r.rank}  ${sg.r.name.toUpperCase()}  ${sg.r.score.toLocaleString()}`, F = 100;
+        const label = `#${sg.r.rank}  ${sg.r.name.toUpperCase()}${sg.r.dev ? '  [DEV]' : ''}  ${sg.r.score.toLocaleString()}`, F = 100;
         cx.font = `900 ${F}px Orbitron, Inter, sans-serif`; const tw = cx.measureText(label).width + F * 1.2, th = F * 1.5;
         { const a = -Math.PI / 2;   // on the ceiling
           const c = proj(a, .98, sg.z), px = proj(a + .02, .98, sg.z), pz = proj(a, .98, sg.z + .02);
