@@ -375,6 +375,8 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 .sr-rep i.x{background:#26304f;box-shadow:none}
 .sr-rep:disabled{opacity:.4}
 .sr-exit{position:absolute;left:50%;transform:translateX(-50%);bottom:14px}
+.sr-fx{position:absolute;right:14px;bottom:14px}
+.sr-fx[aria-pressed="false"]{opacity:.75}
 @media (max-width:520px){.sr-hud{top:104px}.sr-big{min-width:110px;padding:14px}}
 /* Tuner redesign: mode choice, string chips, three steps */
 #tn-modes h2{margin:4px 0 12px}
@@ -604,6 +606,7 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
     <button class="sr-big" type="button" id="sr-sharp" disabled>▲ SHARP<small>↑ higher</small></button>
   </div>
   <button class="ghost sr-exit" type="button" id="sr-exit">Quit</button>
+  <button class="ghost sr-fx" type="button" id="sr-fx" aria-pressed="true" title="Turn the moving tunnel off if the game feels slow (key V)">🎨 Visuals: On</button>
 </section>
 
 <!-- end -->
@@ -3229,10 +3232,17 @@ const SRUN = (() => {
   $('sr-sharp').onpointerdown = () => answer(1); $('sr-flat').onpointerdown = () => answer(-1);   // count the press itself, not the release
   $('sr-rep').onclick = () => { if (R.phase !== 'answer' || R.reps <= 0) return; R.reps--; hud(); listenThenAnswer(); };
   $('sr-exit').onclick = quit;
+  // Visuals on/off: off draws no tunnel at all (just a timer bar), for slow school computers. Remembered on this computer.
+  const fxKey = 'bw_srun_fx_v1', fxBtn = $('sr-fx');
+  let fxOn = true; try { fxOn = localStorage.getItem(fxKey) !== 'off'; } catch {}
+  const fxShow = () => { fxBtn.textContent = fxOn ? '🎨 Visuals: On' : '🎨 Visuals: Off'; fxBtn.setAttribute('aria-pressed', String(fxOn)); };
+  const fxToggle = () => { fxOn = !fxOn; try { localStorage.setItem(fxKey, fxOn ? 'on' : 'off'); } catch {} fxShow(); fxBtn.blur(); };
+  fxBtn.onclick = fxToggle; fxShow();
   addEventListener('keydown', e => {
     if (S.mode !== 'srun' || $('srun').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'ArrowUp') { e.preventDefault(); answer(1); } else if (e.key === 'ArrowDown') { e.preventDefault(); answer(-1); }
     else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); $('sr-rep').click(); }
+    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); fxToggle(); }
   });
 
   /* ---------- the tunnel: first person down a glowing nerve fiber ---------- */
@@ -3252,6 +3262,15 @@ const SRUN = (() => {
       requestAnimationFrame(frame); const raw = now - last, dt = Math.min(.05, raw / 1000); last = now;
       if ($('srun').hidden) return;
       if (R.phase === 'answer' && raw > 120) R.t0 += raw - 17;   // a frozen moment doesn't eat into the 4 seconds
+      if (!fxOn) {   // Visuals off: a plain dark screen and a timer bar, nothing else to draw
+        if (dive > 0) { dive = 0; target = 1.2; diveRes && diveRes(); }   // skip the dive into the tunnel
+        if (W !== cv.clientWidth || H !== cv.clientHeight) size();
+        cx.setTransform(PR, 0, 0, PR, 0, 0); cx.globalCompositeOperation = 'source-over'; cx.fillStyle = '#03050c'; cx.fillRect(0, 0, W, H);
+        if (R.phase === 'answer') { const tl = Math.min(1, Math.max(0, 1 - (performance.now() - R.t0) / LIMIT_MS)), bw = Math.min(W * .6, 520) * tl;
+          cx.fillStyle = `hsl(${hue() % 360} 90% 65%)`; cx.fillRect(W / 2 - bw / 2, H * .5 - 3, bw, 6); }
+        if (R.phase === 'answer' && performance.now() - R.t0 > LIMIT_MS) answer(0);   // time ran out
+        return;
+      }
       if (!lite && raw < 1000) { slowAvg += ((raw > 30 ? 1 : 0) - slowAvg) * .03; if (slowAvg > .5) { lite = true; size(); } }
       if (W !== cv.clientWidth || H !== cv.clientHeight) size();
       speed += (target - speed) * Math.min(1, dt * 3);
