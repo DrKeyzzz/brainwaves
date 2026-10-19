@@ -602,7 +602,7 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
   <div class="sr-pass" id="sr-pass" aria-live="polite"></div>
   <div class="sr-ctrl">
     <button class="sr-big" type="button" id="sr-flat" disabled>▼ FLAT<small>↓ lower</small></button>
-    <button class="sr-rep" type="button" id="sr-rep" disabled>↻ Replay <span id="sr-reps"></span></button>
+    <button class="sr-rep" type="button" id="sr-rep" disabled title="Hear it again (Space)">↻ Replay <span id="sr-reps"></span></button>
     <button class="sr-big" type="button" id="sr-sharp" disabled>▲ SHARP<small>↑ higher</small></button>
   </div>
   <button class="ghost sr-exit" type="button" id="sr-exit">Quit</button>
@@ -3230,6 +3230,7 @@ const SRUN = (() => {
   function quit() { if (S.mode !== 'srun' || S.busy) return; if (S.rounds > 0) finish(true); else { R.tok++; R.phase = 'idle'; backToLadder(); } }
   $('sr-sharp').onclick = () => answer(1); $('sr-flat').onclick = () => answer(-1);
   $('sr-sharp').onpointerdown = () => answer(1); $('sr-flat').onpointerdown = () => answer(-1);   // count the press itself, not the release
+  addEventListener('keyup', e => { if (e.code === 'Space' && S.mode === 'srun' && !$('srun').hidden) e.preventDefault(); }, true);   // Space never 'clicks' a focused Sharp/Flat button
   $('sr-rep').onclick = () => { if (R.phase !== 'answer' || R.reps <= 0) return; R.reps--; hud(); listenThenAnswer(); };
   $('sr-exit').onclick = quit;
   // Visuals on/off: off draws no tunnel at all (just a timer bar), for slow school computers. Remembered on this computer.
@@ -3241,7 +3242,7 @@ const SRUN = (() => {
   addEventListener('keydown', e => {
     if (S.mode !== 'srun' || $('srun').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'ArrowUp') { e.preventDefault(); answer(1); } else if (e.key === 'ArrowDown') { e.preventDefault(); answer(-1); }
-    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); $('sr-rep').click(); }
+    else if (e.key === 'r' || e.key === 'R' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) $('sr-rep').click(); }   // Space or R: hear the two notes again
     else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); fxToggle(); }
   });
 
