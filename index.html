@@ -1497,6 +1497,7 @@ const Web = (() => {
 
   function frame(ms) {
     requestAnimationFrame(frame);
+    if (!document.getElementById('srun').hidden && !resolve) return;   // hidden behind the Sharp or Flat? tunnel: skip the work (slow Chromebooks)
     const t = ms / 1000;
     if (resolve || u !== to) {
       const k = Math.min(1, (performance.now() - t0) / (dur * 1000)); u = from + (to - from) * k;
@@ -3180,7 +3181,8 @@ const SRUN = (() => {
   function play() { const { f1, f2 } = R.cur; tone(f1, .05, NOTE); tone(f2, .05 + NOTE + GAP2, NOTE); T.pulse(); setTimeout(() => T.pulse(), (NOTE + GAP2) * 1000); return .05 + 2 * NOTE + GAP2; }
   function listenThenAnswer() {
     const tok = ++R.tok; R.phase = 'listen'; btns(false);
-    const d = play(); setTimeout(() => { if (tok !== R.tok) return; R.phase = 'answer'; R.t0 = performance.now(); btns(true); }, d * 1000);
+    const d = play(), second = .05 + NOTE + GAP2;   // you can answer as soon as the second note starts; the 4-second clock starts when it ends
+    setTimeout(() => { if (tok !== R.tok) return; R.phase = 'answer'; R.t0 = performance.now() + (d - second) * 1000; btns(true); }, second * 1000);
   }
   function round() {
     say(''); const midi = 57 + rand(13), dir = Math.random() < .5 ? 1 : -1, f1 = 440 * Math.pow(2, (midi - 69) / 12);
@@ -3224,6 +3226,7 @@ const SRUN = (() => {
   }
   function quit() { if (S.mode !== 'srun' || S.busy) return; if (S.rounds > 0) finish(true); else { R.tok++; R.phase = 'idle'; backToLadder(); } }
   $('sr-sharp').onclick = () => answer(1); $('sr-flat').onclick = () => answer(-1);
+  $('sr-sharp').onpointerdown = () => answer(1); $('sr-flat').onpointerdown = () => answer(-1);   // count the press itself, not the release
   $('sr-rep').onclick = () => { if (R.phase !== 'answer' || R.reps <= 0) return; R.reps--; hud(); listenThenAnswer(); };
   $('sr-exit').onclick = quit;
   addEventListener('keydown', e => {
@@ -3238,39 +3241,45 @@ const SRUN = (() => {
     let signs = [], shards = [], broken = 0, fall = 0;   // fall: the whole tunnel collapsing after the last life   // sign: the next leaderboard name on the wall; shards: pieces of wall falling away after a lost life
     const FIB = 26, fib = Array.from({ length: FIB }, (_, i) => ({ a: i / FIB * Math.PI * 2 + Math.random() * .1, r: .82 + Math.random() * .16, w: .6 + Math.random() * 1.2 }));
     const dust = Array.from({ length: 160 }, () => ({ a: Math.random() * 6.28, r: Math.random() * .85, z: Math.random() * 30 }));
-    function size() { const r = devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; cv.width = W * r; cv.height = H * r; }
+    // Lite: slow computers (few cores, or frames running slow) get a lighter tunnel: 1x resolution, half the rings, fewer streaks, no glow blur
+    let lite = (navigator.hardwareConcurrency || 8) <= 4, slowAvg = 0;
+    let PR = 1;   // the canvas's pixel ratio (set in size)
+    function size() { const r = PR = lite ? 1 : Math.min(devicePixelRatio || 1, 1.5); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * r; cv.height = H * r; }
     const hue = () => { const g = R.depth; return g < 8 ? 200 - g * 7.5 : g < 16 ? 140 - (g - 8) * 12 : g < 26 ? 405 - (g - 16) * 7.5 : 320; };   // blue, green, gold, hot pink as you go deeper
     const bend = z => [Math.sin(z * .11) * .35 + Math.sin(z * .047) * .25, Math.cos(z * .09) * .22];   // the fiber curves gently
     function proj(a, r, z) { const zz = Math.max(.05, z - depthZ), [bx, by] = bend(z), [cbx, cby] = bend(depthZ + .5), f = Math.min(W, H) * .62 / zz; return [W / 2 + (Math.cos(a) * r + bx - cbx) * f, H / 2 + (Math.sin(a) * r * .86 + by - cby) * f, zz]; }
     function frame(now) {
-      requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now;
+      requestAnimationFrame(frame); const raw = now - last, dt = Math.min(.05, raw / 1000); last = now;
       if ($('srun').hidden) return;
+      if (R.phase === 'answer' && raw > 120) R.t0 += raw - 17;   // a frozen moment doesn't eat into the 4 seconds
+      if (!lite && raw < 1000) { slowAvg += ((raw > 30 ? 1 : 0) - slowAvg) * .03; if (slowAvg > .5) { lite = true; size(); } }
       if (W !== cv.clientWidth || H !== cv.clientHeight) size();
       speed += (target - speed) * Math.min(1, dt * 3);
       if (dive > 0) { dive = Math.max(0, dive - dt / 1.6); speed = 2 + (1 - Math.abs(dive * 2 - 1)) * 40; if (dive === 0) { target = 1.2; diveRes && diveRes(); } }
       depthZ += speed * dt; broken = fall > 0 ? Math.min(1.25, broken + dt * .5) : Math.max(0, broken - dt * .45); if (fall > 0) fall += dt; red *= Math.exp(-dt * 3); light *= Math.exp(-dt * 2.2); gateLit *= Math.exp(-dt * .6); shake *= Math.exp(-dt * 6);
       const h = reduceMotion ? 200 : hue(); $('srun').style.setProperty('--sr-hue', Math.round(h % 360));
-      const pr = devicePixelRatio || 1, sx = (Math.random() - .5) * shake, sy = (Math.random() - .5) * shake; cx.setTransform(pr, 0, 0, pr, sx * pr, sy * pr);
+      const pr = PR, sx = (Math.random() - .5) * shake, sy = (Math.random() - .5) * shake; cx.setTransform(pr, 0, 0, pr, sx * pr, sy * pr);
       cx.fillStyle = '#03050c'; cx.fillRect(-20, -20, W + 40, H + 40);
       const g0 = cx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * .6); g0.addColorStop(0, `hsla(${h},90%,55%,${.18 + light * .35})`); g0.addColorStop(1, 'transparent'); cx.fillStyle = g0; cx.fillRect(0, 0, W, H);
       cx.globalCompositeOperation = 'lighter';
       const z0 = Math.floor(depthZ);
-      for (let k = 60; k >= 1; k--) {   // the walls of the fiber rushing past
-        const z = z0 + k * .5, zz = z - depthZ; if (zz < .2) continue; const pts = [];
-        for (let i = 0; i <= 48; i++) { const a = i / 48 * 6.28; pts.push(proj(a, 1 + Math.sin(a * 5 + z * 1.3) * .03, z)); }
+      const RINGS = lite ? 30 : 60, SEG = lite ? 24 : 48;
+      for (let k = RINGS; k >= 1; k--) {   // the walls of the fiber rushing past
+        const z = z0 + k * 30 / RINGS, zz = z - depthZ; if (zz < .2) continue; const pts = [];
+        for (let i = 0; i <= SEG; i++) { const a = i / SEG * 6.28; pts.push(proj(a, 1 + Math.sin(a * 5 + z * 1.3) * .03, z)); }
         const al = Math.max(0, Math.min(1, (1 - zz / 30))) * (.28 + light * .4), hh = h + (Math.round(z * 2) % 3) * 8, gone = i => broken > 0 && zz < 9 && ((i * 7 + Math.round(z * 4) * 13) % 10) / 10 < broken * .8;   // after a lost life, nearby walls have holes
         cx.beginPath(); pts.forEach((p, i) => (i && !gone(i) ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1])));
-        cx.strokeStyle = `hsla(${hh},95%,${55 + light * 25}%,${al * .35})`; cx.lineWidth = Math.max(1, 9 / zz); cx.stroke();
+        if (!lite) { cx.strokeStyle = `hsla(${hh},95%,${55 + light * 25}%,${al * .35})`; cx.lineWidth = Math.max(1, 9 / zz); cx.stroke(); }
         cx.strokeStyle = `hsla(${hh},95%,${62 + light * 25}%,${al})`; cx.lineWidth = Math.max(.5, 2.2 / zz * 2.4); cx.stroke();
       }
-      fib.forEach(fb => { cx.strokeStyle = `hsla(${h + 30},90%,72%,${.26 + light * .35})`; cx.lineWidth = fb.w; cx.beginPath(); for (let z = depthZ + 30; z > depthZ + .3; z -= .6) { const p = proj(fb.a, fb.r, z); z > depthZ + 29.5 ? cx.moveTo(p[0], p[1]) : cx.lineTo(p[0], p[1]); } cx.stroke(); });
-      dust.forEach(d => { let z = d.z; while (z < depthZ + .3) z += 30; d.z = z; const p = proj(d.a, d.r, z), q = proj(d.a, d.r, z + .15 + speed * .12); cx.strokeStyle = `hsla(${h - 20},100%,82%,${Math.min(1, 1.2 - p[2] / 30)})`; cx.lineWidth = Math.max(.6, 3 / p[2]); cx.beginPath(); cx.moveTo(q[0], q[1]); cx.lineTo(p[0], p[1]); cx.stroke(); });
+      fib.forEach((fb, n) => { if (lite && n % 2) return; cx.strokeStyle = `hsla(${h + 30},90%,72%,${.26 + light * .35})`; cx.lineWidth = fb.w; cx.beginPath(); for (let z = depthZ + 30; z > depthZ + .3; z -= lite ? 1.5 : .6) { const p = proj(fb.a, fb.r, z); z > depthZ + 29.5 ? cx.moveTo(p[0], p[1]) : cx.lineTo(p[0], p[1]); } cx.stroke(); });
+      dust.forEach((d, n) => { if (lite && n % 3) return; let z = d.z; while (z < depthZ + .3) z += 30; d.z = z; const p = proj(d.a, d.r, z), q = proj(d.a, d.r, z + .15 + speed * .12); cx.strokeStyle = `hsla(${h - 20},100%,82%,${Math.min(1, 1.2 - p[2] / 30)})`; cx.lineWidth = Math.max(.6, 3 / p[2]); cx.beginPath(); cx.moveTo(q[0], q[1]); cx.lineTo(p[0], p[1]); cx.stroke(); });
       if (gateZ != null) {   // this question's gate: dim while you listen, it lights up when you are right and you fly through it
         const zz = gateZ - depthZ;
         if (zz < .2) gateZ = null;
         else {
           const pts = []; for (let i = 0; i <= 60; i++) pts.push(proj(i / 60 * 6.28, .95, gateZ));
-          const lit = gateLit, tl = R.phase === 'answer' ? Math.max(0, 1 - (performance.now() - R.t0) / LIMIT_MS) : 1;
+          const lit = gateLit, tl = R.phase === 'answer' ? Math.min(1, Math.max(0, 1 - (performance.now() - R.t0) / LIMIT_MS)) : 1;
           cx.lineWidth = Math.max(2, 10 / zz * (1 + lit)); cx.strokeStyle = lit > .05 ? `hsla(${h},100%,${70 + lit * 25}%,${.6 + lit * .4})` : `hsla(${h},60%,70%,.35)`;
           cx.beginPath(); pts.forEach((p, i) => (i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1]))); cx.stroke();
           if (R.phase === 'answer') {   // the timer drains around the gate
@@ -3321,7 +3330,7 @@ const SRUN = (() => {
           cx.save(); cx.globalAlpha = al; cx.transform(ux[0] * sa, ux[1] * sa, uz[0] * sz, uz[1] * sz, c[0], c[1]);
           cx.globalCompositeOperation = 'source-over'; cx.fillStyle = 'rgba(3,5,12,.78)'; cx.strokeStyle = col; cx.lineWidth = F * .08;
           cx.beginPath(); cx.roundRect(-tw / 2, -th / 2, tw, th, th / 2); cx.fill(); cx.stroke();
-          cx.globalCompositeOperation = 'lighter'; cx.shadowColor = col; cx.shadowBlur = Math.min(14, fpx * .8);
+          cx.globalCompositeOperation = 'lighter'; cx.shadowColor = col; cx.shadowBlur = lite ? 0 : Math.min(14, fpx * .8);
           cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = sg.pass ? '#fff' : `hsl(${h % 360} 100% 86%)`; cx.fillText(label, 0, F * .04); cx.restore();
         }
       });
