@@ -3292,7 +3292,7 @@ const SRUN = (() => {
       if (fall > 0) { cx.fillStyle = `rgba(3,5,12,${Math.min(.92, Math.max(0, fall - .6) / 2)})`; cx.fillRect(0, 0, W, H); }   // the lights go out
       if (R.phase === 'answer' && performance.now() - R.t0 > LIMIT_MS) answer(0);   // time ran out
     }
-    // the top 10 names are painted on the tunnel wall (ceiling and floor), small in the distance. Each one sits as far ahead as the answers
+    // the top 10 names are painted on the tunnel ceiling, small in the distance. Each one sits as far ahead as the answers
     // you still need to beat it, so it creeps closer as your score climbs; when you beat it the plate stays put on the wall and you fly past it.
     function drawSign(h, dt) {
       const step = Math.max(1, 100 * START / Math.max(MIN, R.cents));   // about what the next right answer is worth
@@ -3313,17 +3313,17 @@ const SRUN = (() => {
         if (zz > 30) return;
         const label = `#${sg.r.rank}  ${sg.r.name.toUpperCase()}  ${sg.r.score.toLocaleString()}`, F = 100;
         cx.font = `900 ${F}px Orbitron, Inter, sans-serif`; const tw = cx.measureText(label).width + F * 1.2, th = F * 1.5;
-        [-Math.PI / 2, Math.PI / 2].forEach(a => {   // ceiling and floor
+        { const a = -Math.PI / 2;   // on the ceiling
           const c = proj(a, .98, sg.z), px = proj(a + .02, .98, sg.z), pz = proj(a, .98, sg.z + .02);
           const ux = [(px[0] - c[0]) / .02, (px[1] - c[1]) / .02], uz = [(pz[0] - c[0]) / .02, (pz[1] - c[1]) / .02];
-          const sa = .0008 * (ux[0] < 0 ? -1 : 1), sz = .0045 * (uz[1] > 0 ? 1 : -1);   // world size per text pixel; flips keep it readable
+          const sa = Math.min(.0016, 1.7 / tw) * (ux[0] < 0 ? -1 : 1), sz = .0065 * (uz[1] > 0 ? 1 : -1);   // world size per text pixel (big enough to read a step before you pass it); flips keep it readable
           const fpx = Math.abs(uz[1] * sz) * F; if (fpx < 1.2) return;   // too far to see yet
           cx.save(); cx.globalAlpha = al; cx.transform(ux[0] * sa, ux[1] * sa, uz[0] * sz, uz[1] * sz, c[0], c[1]);
           cx.globalCompositeOperation = 'source-over'; cx.fillStyle = 'rgba(3,5,12,.78)'; cx.strokeStyle = col; cx.lineWidth = F * .08;
           cx.beginPath(); cx.roundRect(-tw / 2, -th / 2, tw, th, th / 2); cx.fill(); cx.stroke();
           cx.globalCompositeOperation = 'lighter'; cx.shadowColor = col; cx.shadowBlur = Math.min(14, fpx * .8);
           cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = sg.pass ? '#fff' : `hsl(${h % 360} 100% 86%)`; cx.fillText(label, 0, F * .04); cx.restore();
-        });
+        }
       });
       cx.globalAlpha = 1;
     }
