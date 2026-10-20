@@ -671,7 +671,7 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 (function () {
   const FIREBASE = { apiKey: 'AIzaSyDU9vbCWJ4yWuD8bAX984DmQF4dvo13BHs', authDomain: 'rhythm-trainer-fc313.firebaseapp.com', projectId: 'rhythm-trainer-fc313', appId: '1:956677028482:web:c3ec72a279e61b6f6c929b' };
   const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/', HUB = '../';
-  const GAME_NAMES = { scale: 'Scale Quest', tidal: 'Tidal Tones', rooftop: 'Rooftop Runner', rhythm: 'The Big Score', earshot: 'Earshot Saloon', synapse: 'Brainwaves: Sharp or Flat?' };
+  const GAME_NAMES = { scale: 'Scale Quest', tidal: 'Tidal Tones', rooftop: 'Rooftop Runner', rhythm: 'The Big Score', earshot: 'Earshot Saloon', synapse: 'Brainwaves' };
   const T = { active: false, allow: false, running: false, cfg: null, id: null, doc: null, result: null, heard: false };
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const q = new URLSearchParams(location.search);
@@ -2074,16 +2074,17 @@ async function drawBoard() {
   } catch (e) { if (tok === boardTok) $('lb').innerHTML = "<li><span></span><span>Couldn't load the board. Check your internet connection.</span><span></span><span></span></li>"; }
 }
 
-/* ---------- teacher-assigned settings: ?settings=<base64url JSON> { area: a REGIONS id (default synapse), floor: the level to start on (1 to the area's level count) } ---------- */
+/* ---------- teacher-assigned settings: ?settings=<base64url JSON> { area: a REGIONS id ('' = any area: the whole brain; missing = synapse, as in older tests),
+   floor (Sharp or Flat?) or lv_<area> (the others): the level to start on, 1 to the area's level count } ---------- */
 function applySettingsFromUrl() {
   const q = new URLSearchParams(location.search), raw = q.get('settings'); if (raw == null) return null;
   q.delete('settings'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   let d = null;
   try { let b = raw.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; d = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b), c => c.charCodeAt(0)))); } catch { return null; }
-  if (!d || typeof d !== 'object') return null;
+  if (!d || typeof d !== 'object' || d.area === '') return null;
   const ai = REGIONS.findIndex(r => r.id === (d.area || 'synapse') && r.ready); if (ai < 0) return null;
   S.region = ai; S.startFloor = 0;
-  const fl = parseInt(d.floor, 10), tf = gid() !== 'tuner' && fl >= 1 && fl <= LV().length ? fl - 1 : null;
+  const fl = parseInt(gid() === 'synapse' ? d.floor : d['lv_' + gid()], 10), tf = gid() !== 'tuner' && fl >= 1 && fl <= LV().length ? fl - 1 : null;
   S.teach = { region: ai, floor: tf };   // enterRegion starts the ladder (and practice) on this level
   if (gid() === 'synapse' && tf != null) S.startFloor = tf;
   toast(`Your teacher picked ${REGIONS[ai].game}${tf != null ? `, starting on level ${tf + 1}: ${LV()[tf].name}` : ''}.`, 5000);
@@ -2093,6 +2094,7 @@ function applySettingsFromUrl() {
 async function testStart() {
   const i = S.teach ? S.teach.region : 0;
   if (S.mode === 'home' || S.region !== i) { S.busy = false; await enterRegion(i); }
+  if (window.MTGTest && MTGTest.running) MTGTest.allow = true;   // flying into the area can take longer than the test's start window
   startRun();
 }
 
@@ -2403,7 +2405,7 @@ addEventListener('keydown', e => {
 function initApp() {
   S.mode = 'home'; updateWho(); refreshClass();
   const asg = !(window.MTGTest && MTGTest.active) && applySettingsFromUrl();   // an assignment link (?settings=) opens the teacher's area
-  if (!asg) { const f = new URLSearchParams(location.search).get('focus'), fi = REGIONS.findIndex(r => r.ready && (r.game === f || r.id === f)); if (fi >= 0) { S.region = fi; S.teach = { region: fi, floor: null }; } }   // ?focus=<area name>
+  if (!asg) { const f = (new URLSearchParams(location.search).get('focus') || '').split(' · ')[0], fi = REGIONS.findIndex(r => r.ready && (r.game === f || r.id === f)); if (fi >= 0) { S.region = fi; S.teach = { region: fi, floor: null }; } }   // ?focus=<area name> (or 'Area · skill' from the home page)
   const into = () => { if (S.teach && S.mode === 'home') enterRegion(S.teach.region); };
   drawHome(); pullProg();
   if (reduceMotion) { Web.setU(1); show('home'); into(); return; }
