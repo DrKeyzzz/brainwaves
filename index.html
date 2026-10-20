@@ -2099,13 +2099,14 @@ async function testStart() {
 }
 
 /* ---------- Tuner: pick an instrument, tune each string by ear (practice only) ---------- */
+// pegs match the real instruments: the outer strings wind on the pegs nearest the nut, so no strings cross
 const INST = {
-  guitar:  { name: 'Guitar',  kind: 'guitar',  strings: [['E2', 82.41], ['A2', 110], ['D3', 146.83], ['G3', 196], ['B3', 246.94], ['E4', 329.63]], pegs: [[86, 28], [86, 56], [86, 84], [154, 84], [154, 56], [154, 28]], nut: 94, bridge: 414, nx: [111, 129], bx: [103, 137] },
-  bass:    { name: 'Bass',    kind: 'bass',    strings: [['E1', 41.2], ['A1', 55], ['D2', 73.42], ['G2', 98]], pegs: [[86, 34], [86, 64], [154, 64], [154, 34]], nut: 84, bridge: 428, nx: [113, 127], bx: [107, 133] },
+  guitar:  { name: 'Guitar',  kind: 'guitar',  strings: [['E2', 82.41], ['A2', 110], ['D3', 146.83], ['G3', 196], ['B3', 246.94], ['E4', 329.63]], pegs: [[86, 84], [86, 56], [86, 28], [154, 28], [154, 56], [154, 84]], nut: 94, bridge: 414, nx: [111, 129], bx: [103, 137] },
+  bass:    { name: 'Bass',    kind: 'bass',    strings: [['E1', 41.2], ['A1', 55], ['D2', 73.42], ['G2', 98]], pegs: [[86, 64], [86, 34], [154, 34], [154, 64]], nut: 84, bridge: 428, nx: [113, 127], bx: [107, 133] },
   ukulele: { name: 'Ukulele', kind: 'ukulele', strings: [['G4', 392], ['C4', 261.63], ['E4', 329.63], ['A4', 440]], pegs: [[88, 96], [88, 62], [152, 62], [152, 96]], nut: 118, bridge: 392, nx: [112, 128], bx: [106, 134] },
-  violin:  { name: 'Violin',  kind: 'violin',  strings: [['G3', 196], ['D4', 293.66], ['A4', 440], ['E5', 659.26]], pegs: [[96, 100], [144, 100], [96, 70], [144, 70]], nut: 120, bridge: 394, nx: [113, 127], bx: [107, 133], sc: 1 },
-  viola:   { name: 'Viola',   kind: 'violin',  strings: [['C3', 130.81], ['G3', 196], ['D4', 293.66], ['A4', 440]], pegs: [[96, 100], [144, 100], [96, 70], [144, 70]], nut: 120, bridge: 408, nx: [113, 127], bx: [106, 134], sc: 1.08 },
-  cello:   { name: 'Cello',   kind: 'violin',  strings: [['C2', 65.41], ['G2', 98], ['D3', 146.83], ['A3', 220]], pegs: [[96, 100], [144, 100], [96, 70], [144, 70]], nut: 120, bridge: 422, nx: [113, 127], bx: [105, 135], sc: 1.12, endpin: true },
+  violin:  { name: 'Violin',  kind: 'violin',  strings: [['G3', 196], ['D4', 293.66], ['A4', 440], ['E5', 659.26]], pegs: [[96, 100], [96, 70], [144, 70], [144, 100]], nut: 120, bridge: 394, nx: [113, 127], bx: [107, 133], sc: 1 },
+  viola:   { name: 'Viola',   kind: 'violin',  strings: [['C3', 130.81], ['G3', 196], ['D4', 293.66], ['A4', 440]], pegs: [[96, 100], [96, 70], [144, 70], [144, 100]], nut: 120, bridge: 408, nx: [113, 127], bx: [106, 134], sc: 1.08 },
+  cello:   { name: 'Cello',   kind: 'violin',  strings: [['C2', 65.41], ['G2', 98], ['D3', 146.83], ['A3', 220]], pegs: [[96, 100], [96, 70], [144, 70], [144, 100]], nut: 120, bridge: 422, nx: [113, 127], bx: [105, 135], sc: 1.12, endpin: true },
 };
 const TN = { id: 'guitar', strs: [], sel: -1, tol: 4, fine: false, fails: 0, show: false, done: {} };
 const centsRatio = c => Math.pow(2, c / 1200);
