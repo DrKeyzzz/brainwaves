@@ -1058,6 +1058,46 @@ const MTG_HIST = (() => {
   };
 })();
 
+/* ---------- daily practice record for the teacher (brainwaves_progress/<class>_<date>_<sid>), like tidal_progress ----------
+   Every answer in any brain area is added to today's summary (kept in localStorage bw_day_v1): answers, right, minutes and
+   by_area { <area id>: [right, answers] }. It is sent at most once a minute (and when the page is hidden) to the active
+   class, if it has a teacher, so the dashboard's Grades and Progress views can count Brainwaves. */
+const BWDAY = (() => {
+  const KEY = 'bw_day_v1', day = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const tracked = () => { const p = getProfile(); return p && classesOf(p).some(c => c.owner) ? p : null; };
+  const codes = p => classesOf(p).map(c => c.code).join(',');
+  function read() {
+    const p = tracked(); if (!p) return null;
+    let d = null; try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
+    if (!d || d.date !== day() || d.sid !== sidOf(p) || d.code !== codes(p)) d = { date: day(), sid: sidOf(p), code: codes(p), answers: 0, correct: 0, ms: 0, first: 0, last: 0, by_area: {} };
+    return d;
+  }
+  let timer = 0, lastSync = 0;
+  async function sync() {
+    clearTimeout(timer);
+    const p = tracked(), d = read(); if (!p || !d || !d.answers) return;
+    const base = { date: d.date, sid: d.sid, student: displayName(p), answers: d.answers, correct: d.correct, minutes: Math.max(1, Math.round(d.ms / 60000)), first_at: d.first, last_at: d.last, by_area: d.by_area };
+    try {
+      const { fs, db } = await fb();
+      await wait(Promise.all(classesOf(p).filter(c => c.owner).map(c => fs.setDoc(fs.doc(db, 'brainwaves_progress', `${c.code}_${d.date}_${d.sid}`), { class_code: c.code, owner: c.owner, ...base, updated_at: fs.serverTimestamp() }))));
+    } catch (e) { console.warn('Progress sync failed:', e); }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) sync(); });
+  return {
+    note(area, ok) {
+      const d = read(); if (!d) return;
+      const now = Date.now();
+      if (d.last && now - d.last <= 600000) d.ms += now - d.last;   // gaps over 10 minutes don't count as practice
+      d.first = d.first || now; d.last = now; d.answers++; if (ok) d.correct++;
+      const a = d.by_area[area] || (d.by_area[area] = [0, 0]); a[1]++; if (ok) a[0]++;
+      try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {}
+      clearTimeout(timer); timer = setTimeout(() => { lastSync = Date.now(); sync(); }, Math.max(2000, lastSync + 60000 - Date.now()));   // at most one save a minute
+    },
+    sync,
+  };
+})();
+{ const note = MTG_HIST.note; MTG_HIST.note = (game, labels, ok) => { note(game, labels, ok); BWDAY.note(game, ok); }; }   // every answer also goes into the teacher's daily record
+
 
 /* =====================================================================
    SYNAPSE: hear two notes (once), say sharp or flat.
@@ -1652,8 +1692,10 @@ async function goHome() {
 async function enterRegion(i) {
   if (S.busy) return; const r = REGIONS[i];
   if (!r.ready) { toast(`${r.game} is coming soon.`); return; }
-  if (window.MTGTest && MTGTest.active && r.id !== 'synapse') { toast('This test is for the Sharp or Flat? game.'); return; }
-  ac(); S.busy = true; S.region = i; S.mode = r.id === 'tuner' ? 'wall' : 'ladder'; S.practiceFloor = 0; S.sel = r.id === 'tuner' ? 0 : r.id === 'synapse' && S.startFloor > 0 ? S.startFloor : openLevel();
+  const ti = S.teach ? S.teach.region : 0;   // a test only opens its own area
+  if (window.MTGTest && MTGTest.active && i !== ti) { toast(`This test is for the ${REGIONS[ti].game} game.`); return; }
+  const tf = S.teach && S.teach.region === i ? S.teach.floor : null;   // a teacher's starting level for this area
+  ac(); S.busy = true; S.region = i; S.mode = r.id === 'tuner' ? 'wall' : 'ladder'; S.practiceFloor = tf || 0; S.sel = r.id === 'tuner' ? 0 : tf != null ? tf : openLevel();
   show(null); Web.accent(r.color); Web.lit([i], i);
   await Web.go('micro', { floor: i, dur: 1.9 }); S.busy = false; if (r.id === 'tuner') showWall(); else showLadder();
 }
@@ -1723,7 +1765,7 @@ function drawLadder() {
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = out.join('');
 }
 function selUI() {
-  const f = LV()[S.sel], done = doneArr(), cur = openLevel(), locked = !done[S.sel] && S.sel > cur, el = $('lad-sel');
+  const f = LV()[S.sel], done = doneArr(), cur = openLevel(), tl = S.teach && S.teach.region === S.region && S.teach.floor != null ? S.teach.floor : -1, locked = !done[S.sel] && S.sel > cur && S.sel > tl, el = $('lad-sel');   // the teacher's starting level (and below) is open
   el.style.setProperty('--lc', f.color);
   el.innerHTML = `<b>Level ${S.sel + 1}: ${f.name}</b><span class="c">${f.sub}${isV() ? '' : ` · ×${f.mult} points`}</span>${done[S.sel] ? ' Done. Run it again to beat your score.' : locked ? ' Finish the earlier levels to unlock this one. You can still practice it.' : ` ${isV() ? 'Lock in seven notes' : PER() === 7 ? 'Seven rounds' : 'Ten rounds'} to climb to the next level.`}`;
   $('go-run').disabled = locked; $('go-run').textContent = locked ? 'Locked' : S.sel > 0 || done[0] ? `Start run at level ${S.sel + 1}` : 'Start run';
@@ -2032,16 +2074,26 @@ async function drawBoard() {
   } catch (e) { if (tok === boardTok) $('lb').innerHTML = "<li><span></span><span>Couldn't load the board. Check your internet connection.</span><span></span><span></span></li>"; }
 }
 
-/* ---------- teacher-assigned settings: ?settings=<base64url JSON> (floor 1-6 to start on) ---------- */
+/* ---------- teacher-assigned settings: ?settings=<base64url JSON> { area: a REGIONS id (default synapse), floor: the level to start on (1 to the area's level count) } ---------- */
 function applySettingsFromUrl() {
   const q = new URLSearchParams(location.search), raw = q.get('settings'); if (raw == null) return null;
   q.delete('settings'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   let d = null;
   try { let b = raw.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; d = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b), c => c.charCodeAt(0)))); } catch { return null; }
   if (!d || typeof d !== 'object') return null;
-  const fl = parseInt(d.floor, 10);
-  if (fl >= 1 && fl <= LV().length) { S.startFloor = fl - 1; S.practiceFloor = fl - 1; toast(`Your teacher set the starting level: ${LV()[fl - 1].name}.`, 5000); return new Set(['floor']); }
-  return null;
+  const ai = REGIONS.findIndex(r => r.id === (d.area || 'synapse') && r.ready); if (ai < 0) return null;
+  S.region = ai; S.startFloor = 0;
+  const fl = parseInt(d.floor, 10), tf = gid() !== 'tuner' && fl >= 1 && fl <= LV().length ? fl - 1 : null;
+  S.teach = { region: ai, floor: tf };   // enterRegion starts the ladder (and practice) on this level
+  if (gid() === 'synapse' && tf != null) S.startFloor = tf;
+  toast(`Your teacher picked ${REGIONS[ai].game}${tf != null ? `, starting on level ${tf + 1}: ${LV()[tf].name}` : ''}.`, 5000);
+  return new Set(['area', 'floor']);
+}
+// the teacher's area for a test (Sharp or Flat? when the test has none): into that area, then a run
+async function testStart() {
+  const i = S.teach ? S.teach.region : 0;
+  if (S.mode === 'home' || S.region !== i) { S.busy = false; await enterRegion(i); }
+  startRun();
 }
 
 /* ---------- Tuner: pick an instrument, tune each string by ear (practice only) ---------- */
@@ -2349,9 +2401,13 @@ addEventListener('keydown', e => {
   else if (inGame && (e.key === 'r' || e.key === 'R') && S.mode === 'practice') replay();
 });
 function initApp() {
-  S.mode = 'home'; updateWho(); refreshClass(); drawHome(); pullProg();
-  if (reduceMotion) { Web.setU(1); show('home'); return; }
-  show(null); Web.setU(0, 0); Web.go('macro', { dur: 2.4 }).then(() => { if (S.mode === 'home') show('home'); });   // the opening shot: zoom out from the neurons to the whole brain
+  S.mode = 'home'; updateWho(); refreshClass();
+  const asg = !(window.MTGTest && MTGTest.active) && applySettingsFromUrl();   // an assignment link (?settings=) opens the teacher's area
+  if (!asg) { const f = new URLSearchParams(location.search).get('focus'), fi = REGIONS.findIndex(r => r.ready && (r.game === f || r.id === f)); if (fi >= 0) { S.region = fi; S.teach = { region: fi, floor: null }; } }   // ?focus=<area name>
+  const into = () => { if (S.teach && S.mode === 'home') enterRegion(S.teach.region); };
+  drawHome(); pullProg();
+  if (reduceMotion) { Web.setU(1); show('home'); into(); return; }
+  show(null); Web.setU(0, 0); Web.go('macro', { dur: 2.4 }).then(() => { if (S.mode === 'home') { show('home'); into(); } });   // the opening shot: zoom out from the neurons to the whole brain
 }
 function afterWho() { updateWho(); progCache = null; drawHome(); pullProg(); }
 /* the Brainwaves intro sound (bleeps, low strings on a fifth, the voice-over): plays every time the page opens (his call: "they love it").
@@ -2368,7 +2424,7 @@ playIntro();   // try right away; if the browser says no, the first click or key
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => playIntro(), true));
 addEventListener('storage', e => { if (e.key === PROFILE_KEY) afterWho(); });
 /*@@BOOT@@*/
-/* MTG_TEST setup */ MTGTest.setup({ game: 'synapse', hide: ["#who-btn"], apply: () => { applySettingsFromUrl(); }, start: () => { startRun(); } }); /* /MTG_TEST setup */
+/* MTG_TEST setup */ MTGTest.setup({ game: 'synapse', hide: ["#who-btn"], apply: () => { applySettingsFromUrl(); }, start: () => { testStart(); } }); /* /MTG_TEST setup */
 initApp();
 </script>
 <script id="pick-a-voice">
@@ -3386,6 +3442,98 @@ const SRUN = (() => {
   return { start, quit, depth: () => R.depth, _R: R };
 })();
 </script>
+<!-- MTG_ASSIGN start: identical in every game, only data-game changes. Master copy: Music Games/shared/mtg-assign.snippet.html (install with shared/apply-assign.py). -->
+<!-- "Assignment complete": when a signed-in student reaches the goal of their teacher's assignment in this game, a card pops up
+     (Back to home / Keep practicing), so nobody does 80 when 40 was asked. It counts exactly like the home page's "From your teacher"
+     card: the assignment cached by the home page (localStorage mtg_assign_v1:<sid>) and the practice history (mtg_hist_v1:<sid>),
+     answers (or minutes) in this game from the assignment's start to end day. It shows once per assignment task, and only when the
+     goal is reached while this page is open. No Firestore reads. -->
+<style>
+  #mtg-asg-done { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 16px; background: rgba(4, 8, 18, .72); backdrop-filter: blur(3px); font: 16px/1.4 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  #mtg-asg-done .card { max-width: 420px; width: 100%; text-align: center; background: #101a33; color: #f2f5ff; border: 2px solid #2fbf71; border-radius: 20px; padding: 26px 22px 20px; box-shadow: 0 0 0 6px rgba(47, 191, 113, .15), 0 20px 60px rgba(0, 0, 0, .5); animation: mtgAsgPop .45s cubic-bezier(.2, 1.5, .4, 1) both; }
+  #mtg-asg-done .big { font-size: 46px; line-height: 1; }
+  #mtg-asg-done h2 { margin: 10px 0 6px; font-size: 24px; }
+  #mtg-asg-done p { margin: 0 0 18px; color: #c7d2ee; }
+  #mtg-asg-done .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  #mtg-asg-done a, #mtg-asg-done button { font: 700 15px/1 inherit; font-family: inherit; padding: 12px 18px; border-radius: 999px; cursor: pointer; text-decoration: none; }
+  #mtg-asg-done a { background: #2fbf71; color: #06210f; border: 0; }
+  #mtg-asg-done button { background: transparent; color: #f2f5ff; border: 1px solid #3a4a78; }
+  @keyframes mtgAsgPop { from { transform: scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { #mtg-asg-done .card { animation: none; } }
+</style>
+<script id="mtg-assign" data-game="brainwaves">
+(function () {
+  var GAME = document.currentScript.getAttribute('data-game'), HOME = 'https://drkeyzzz.github.io/';
+  var NAMES = { scale: 'Scale Quest', tidal: 'Tidal Tones', rooftop: 'Rooftop Runner', rhythm: 'The Big Score', earshot: 'Earshot Saloon', brainwaves: 'Brainwaves' };
+  // Brainwaves saves each brain area under its own id; it counts as one game, and its skills are the area names (like the home page's foldBrainwaves)
+  var BW = { synapse: 'Sharp or Flat?', intervals: 'Intervals', chords: 'Chord Colors', progressions: 'Progressions', scales: 'Scales and modes', voice: 'Pick a Voice', tuner: 'Tuner' };
+  function gameDay(day) {
+    if (GAME !== 'brainwaves') return day[GAME];
+    var b = null;
+    Object.keys(BW).forEach(function (id) {
+      var x = day[id]; if (!x) return; b = b || { answers: 0, ms: 0, skills: {} };
+      b.answers += x.answers || 0; b.ms += x.ms || 0; b.skills[BW[id]] = [x.correct || 0, x.answers || 0];
+    });
+    return b;
+  }
+  function load(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function prof() { try { if (sessionStorage.getItem('music_guest') === '1') return null; } catch (e) {} var p = load('rdt_profile_v1'); return p && p.first && p.init ? p : null; }
+  function sidOf(p) { return (p.first + p.init).toLowerCase().replace(/[^a-z]/g, ''); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function skills(t) { return t.skills && t.skills.length ? t.skills : t.skill ? [t.skill] : []; }
+  // the same count as the home page's assignDone(), for this game only
+  function count(days, a, t) {
+    var n = 0, sk = skills(t);
+    Object.keys(days).forEach(function (d) {
+      if (d < a.start || d > a.end) return;
+      var g = gameDay(days[d]); if (!g) return;
+      if (t.unit === 'minutes') n += g.ms || 0;
+      else if (sk.length) sk.forEach(function (k) { n += ((g.skills || {})[k] || [0, 0])[1]; });
+      else n += g.answers || 0;
+    });
+    return t.unit === 'minutes' ? Math.floor(n / 60000) : n;
+  }
+  // every task for this game in the student's classes that is open today: [{key, t, a, n}]
+  function tasks() {
+    var p = prof(); if (!p) return [];
+    var sid = sidOf(p), by = load('mtg_assign_v1:' + sid) || {}, h = load('mtg_hist_v1:' + sid), days = h && h.days ? h.days : {}, d = today(), out = [];
+    Object.keys(by).forEach(function (code) {
+      var a = by[code]; if (!a || !Array.isArray(a.tasks) || a.start > d || a.end < d) return;
+      a.tasks.forEach(function (t, i) {
+        if (!t || t.game !== GAME || !(Number(t.goal) > 0)) return;
+        out.push({ key: sid + '|' + code + '|' + a.start + '|' + a.end + '|' + i + '|' + t.goal, t: t, a: a, n: count(days, a, t) });
+      });
+    });
+    return out;
+  }
+  var below = {}, shown = {};
+  function show(x) {
+    if (document.getElementById('mtg-asg-done')) return;
+    var t = x.t, keys = t.settings && Array.isArray(t.settings.keys) ? t.settings.keys.slice(0, 6).join(', ') : skills(t).join(', ');
+    var what = (NAMES[GAME] || 'this game') + (keys ? ': ' + keys : ''), unit = t.unit === 'minutes' ? 'minutes' : 'answers';
+    var el = document.createElement('div'); el.id = 'mtg-asg-done'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'mtg-asg-h');
+    el.innerHTML = '<div class="card"><div class="big" aria-hidden="true">✅</div><h2 id="mtg-asg-h">Assignment complete!</h2>'
+      + '<p>You did ' + Math.min(x.n, 9999) + ' of ' + t.goal + ' ' + unit + ' in ' + what.replace(/[<>&]/g, '') + '. Your teacher can see it.</p>'
+      + '<div class="row"><a href="' + HOME + '">Back to home</a><button type="button">Keep practicing</button></div></div>';
+    var close = function () { el.remove(); removeEventListener('keydown', keys2, true); };
+    var keys2 = function (e) { if (e.key === 'Escape') { e.preventDefault(); close(); } else if (e.key !== 'Tab' && e.key !== 'Enter' && e.key !== ' ') { e.stopPropagation(); e.preventDefault(); } };
+    el.querySelector('button').onclick = close;
+    addEventListener('keydown', keys2, true);   // the game underneath doesn't get the keys while the card is up
+    document.body.appendChild(el); el.querySelector('a').focus();
+  }
+  function check() {
+    tasks().forEach(function (x) {
+      if (shown[x.key]) return;
+      if (x.n < x.t.goal) { below[x.key] = true; return; }
+      shown[x.key] = true;
+      if (below[x.key]) show(x);   // reached while this page was open (not an assignment finished earlier)
+    });
+  }
+  check(); setInterval(check, 1500);
+})();
+</script>
+<!-- MTG_ASSIGN end -->
 <!-- MTG_TIME start: identical in every game, only data-mount / data-place change. Master copy: Music Games/shared/mtg-time.snippet.html -->
 <script id="mtg-time" data-mount=".mtg-home" data-place="append">
 /* Practice time box (added 2026-10-16). Shows "Today: N min" (every game added together) and "All time" with a

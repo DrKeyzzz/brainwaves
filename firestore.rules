@@ -281,6 +281,29 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isTeacher() && resource.data.owner == request.auth.token.email);
     }
 
+    // Brainwaves (https://drkeyzzz.github.io/brainwaves/): one practice summary per student per class per day,
+    // every brain area together, plus by_area { <area id>: [right, answers] }. Students write their own; only the teacher (or the admin) reads it.
+    match /brainwaves_progress/{docId} {
+      allow read: if isAdmin() || (isTeacher() && resource.data.owner == request.auth.token.email);
+
+      allow create, update: if request.resource.data.keys().hasOnly(['class_code', 'owner', 'date', 'sid', 'student', 'answers', 'correct', 'minutes', 'first_at', 'last_at', 'by_area', 'updated_at'])
+        && request.resource.data.class_code is string
+        && exists(/databases/$(database)/documents/classes/$(request.resource.data.class_code))
+        && get(/databases/$(database)/documents/classes/$(request.resource.data.class_code)).data.ownerEmail == request.resource.data.owner
+        && docId == request.resource.data.class_code + '_' + request.resource.data.date + '_' + request.resource.data.sid
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.sid.matches('^[a-z]{2,16}$')
+        && request.resource.data.student is string && request.resource.data.student.size() <= 24
+        && (isAdmin() || !request.resource.data.student.lower().matches('milnes *d[.]? *'))   // only the developer can be Milnes D.
+        && request.resource.data.answers is int && request.resource.data.answers >= 0 && request.resource.data.answers <= 20000
+        && request.resource.data.correct is int && request.resource.data.correct >= 0 && request.resource.data.correct <= request.resource.data.answers
+        && request.resource.data.minutes is int && request.resource.data.minutes >= 0 && request.resource.data.minutes <= 1440
+        && request.resource.data.by_area is map && request.resource.data.by_area.keys().hasOnly(['synapse', 'intervals', 'chords', 'progressions', 'scales', 'voice', 'tuner'])
+        && request.resource.data.updated_at == request.time;
+
+      allow delete: if isAdmin() || (isTeacher() && resource.data.owner == request.auth.token.email);
+    }
+
     // Critical Listening Lab (https://drkeyzzz.github.io/critical-listening-lab/): one summary per student
     // per day. Students write their own; only the class's teacher (or the admin) can read it.
     match /listening_progress/{docId} {
