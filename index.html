@@ -2094,8 +2094,8 @@ function applySettingsFromUrl() {
 async function testStart() {
   const i = S.teach ? S.teach.region : 0;
   if (S.mode === 'home' || S.region !== i) { S.busy = false; await enterRegion(i); }
-  if (window.MTGTest && MTGTest.running) MTGTest.allow = true;   // flying into the area can take longer than the test's start window
-  startRun();
+  const t = window.MTGTest && MTGTest.running; if (t) MTGTest.allow = true;   // flying into the area can take longer than the test's start window
+  startRun(); if (t) MTGTest.allow = false;
 }
 
 /* ---------- Tuner: pick an instrument, tune each string by ear (practice only) ---------- */
