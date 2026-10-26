@@ -491,6 +491,29 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 #game.prog .ib.cc{padding:10px 4px}
 #game.prog .cnet{height:clamp(120px,24vh,260px)}
 @media (max-width:520px){#game.prog .stage{padding:170px 12px 104px}#game.prog .cnet{height:clamp(90px,15vh,150px)}#game.prog .iansw.chords{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}#game.prog .ib.cc{padding:8px 2px}#game.prog .ib.cc small{font-size:9px;letter-spacing:0}}
+/* Perfect Pitch: the piano is the answer pad (and the whole of Practice) */
+.pp{width:min(820px,100%);margin:6px auto 0}
+.pp-bar{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px;font-size:13px;color:var(--mut)}
+.pp-bar select{color:var(--ink);background:#0b1226;border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:13px;font-weight:600}
+.pp-oct{display:flex;gap:4px}.pp-oct button{padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:#0b1226;font-weight:700;font-size:13px;color:var(--mut)}
+.pp-oct button[aria-pressed=true]{border-color:#d8ecff;color:var(--ink)}
+.pp-cols{cursor:pointer;display:flex;gap:4px;align-items:center}
+.pp-piano{position:relative;height:clamp(110px,24vh,200px);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.pk{position:absolute;top:0;border-radius:0 0 12px 12px;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:8px;font-weight:800;transition:background .12s,box-shadow .12s,transform .08s,filter .2s}
+.pk.w{height:100%;background:linear-gradient(#f4f8ff,#cdd8ee);border:1px solid #0b1226;color:#3b4a70;font-size:clamp(14px,2.4vw,19px)}
+.pk.b{height:60%;background:linear-gradient(#1b2340,#070b16);border:1px solid #000;color:#8796bd;z-index:2;font-size:clamp(10px,1.5vw,13px);box-shadow:0 4px 8px #0008}
+.pk .sw{width:60%;height:5px;border-radius:5px;background:var(--nc);margin-bottom:6px;display:none}
+.pp.col .pk .sw{display:block}
+.pk kbd{font:600 10px Inter,sans-serif;opacity:.45;margin-top:3px}
+.pk.on,.pk.right{background:linear-gradient(color-mix(in srgb,var(--nc) 70%,#fff),var(--nc));box-shadow:0 0 30px var(--nc),0 0 60px color-mix(in srgb,var(--nc) 50%,transparent);color:#06101f}
+.pk.on{transform:translateY(3px)}
+.pp:not(.col) .pk{--nc:#d8ecff}
+.pk.right{box-shadow:0 0 0 3px #fff,0 0 34px var(--nc)}
+.pk.wrong{background:linear-gradient(#4a1626,#200810);color:#ff8090;box-shadow:inset 0 0 0 3px var(--bad),0 0 20px #ff5a6e66}
+.pk.right::before,.pk.wrong::before{position:absolute;top:8px;font-size:18px;font-weight:800}.pk.right::before{content:'✓';color:#06101f}.pk.wrong::before{content:'✗';color:var(--bad)}
+#pp:not([hidden]) ~ #pr-tools .btn{flex:0 1 260px}
+.pk.off{filter:brightness(.32) saturate(.3);pointer-events:none}
+@media (max-width:520px){.pk kbd{display:none}}
 .p-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%);padding:12px 18px;border-radius:14px;font:800 22px Inter,sans-serif;color:#fff;background:color-mix(in srgb,var(--c) 40%,#0b1226);border:2px solid var(--c);box-shadow:0 0 24px var(--c)}
 #b-psub:not(:disabled){border-color:var(--ok);box-shadow:0 0 18px #48e0c855}
 .ib.cc.rn{font-size:20px}
@@ -569,6 +592,89 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 #tn-svg.strum{animation:tnStrum 1.5s ease-out}
 @keyframes tnStrum{20%{filter:drop-shadow(0 0 22px #5fe3a4)}100%{filter:none}}
 </style>
+<!-- MTG_SOUND start: identical in every game. Master copy: Music Games/shared/mtg-sound.snippet.js (install with apply-sound.py) -->
+<script id="mtg-sound">
+/* MTG_SOUND: the shared instrument sound engine (identical in every game; master: Music Games/shared/mtg-sound.snippet.js,
+   install with shared/apply-sound.py). window.MTGSound:
+     list() -> [{key,name}]   get() / set(key) (localStorage mtg_sound_v1, fires 'mtgsound' on window)
+     ctx(audioContext)  out(node)  preload(lo, hi) -> Promise  note(midi, when, dur, vel = 90, dest)
+   Recordings: Salamander Grand + tonejs-instruments (CC BY 3.0), vibraphone from VCSL (CC0, hosted on drkeyzzz.github.io/sounds). */
+(function () {
+  var KEY = 'mtg_sound_v1', SAL = 'https://tonejs.github.io/audio/salamander/', TJI = 'https://nbrosowsky.github.io/tonejs-instruments/samples/';
+  var VIB = location.hostname === 'localhost' ? '/hub/sounds/vibes/' : 'https://drkeyzzz.github.io/sounds/vibes/';
+  var NIX = { C: 0, Cs: 1, D: 2, Ds: 3, E: 4, F: 5, Fs: 6, G: 7, Gs: 8, A: 9, As: 10, B: 11 };
+  function toMidi(n) { var p = n.match(/^([A-G]s?)(\d)$/); return 12 * (+p[2] + 1) + NIX[p[1]]; }
+  function SET(base, names) { return names.split(' ').map(function (n) { return { m: toMidi(n), url: base + n + '.mp3' }; }); }
+  var SOUNDS = [
+    { key: 'epiano', name: 'Soft electric piano' },
+    { key: 'piano', name: 'Grand piano', samples: SET(SAL, 'A1 C2 Ds2 Fs2 A2 C3 Ds3 Fs3 A3 C4 Ds4 Fs4 A4 C5 Ds5 Fs5 A5 C6'), decay: 1.2 },
+    { key: 'strings', name: 'Strings', samples: SET(TJI + 'cello/', 'C2 D2 E2 F2 G2 A2 B2 C3 D3 E3 F3 G3').concat(SET(TJI + 'violin/', 'A3 C4 E4 G4 A4 C5 E5 G5 A5 C6')), attack: .09, release: .45, gain: 1.7 },
+    { key: 'flute', name: 'Flute', samples: SET(TJI + 'flute/', 'C4 E4 A4 C5 E5 A5 C6 E6 A6'), attack: .05, release: .3, gain: 1.6 },
+    { key: 'vibes', name: 'Vibraphone', samples: SET(VIB, 'F2 A2 C3 E3 B3 D4 A4 C5 E5'), decay: 1.2, gain: 1.3 }
+  ];
+  var BY = {}; SOUNDS.forEach(function (s) { BY[s.key] = s; });
+  var A = null, OUT = null, bus = null, BUFS = {}, LOADING = {}, NORM = {};
+  function ac() {
+    if (!A) A = new (window.AudioContext || window.webkitAudioContext)();
+    if (!bus) {   // dry + a small room reverb, into the game's output (or the speakers)
+      bus = A.createGain(); var wet = A.createGain(), rev = A.createConvolver(), len = Math.floor(A.sampleRate * 1.6), ir = A.createBuffer(2, len, A.sampleRate);
+      for (var ch = 0; ch < 2; ch++) { var d = ir.getChannelData(ch), lp = 0; for (var i = 0; i < len; i++) { var k = i / len; lp = lp * (.2 + .75 * k) + (Math.random() * 2 - 1) * (1 - (.2 + .75 * k)); d[i] = lp * Math.pow(1 - k, 2.2); } }
+      rev.buffer = ir; wet.gain.value = .18; bus.connect(OUT || A.destination); bus.connect(rev); rev.connect(wet); wet.connect(OUT || A.destination);
+      bus._wet = wet;
+    }
+    if (A.state === 'suspended') A.resume();
+    return A;
+  }
+  function cur() { var k = null; try { k = localStorage.getItem(KEY); } catch (e) {} return BY[k] ? k : 'epiano'; }
+  function load(s) {
+    var c = ac();
+    return BUFS[s.url] ? Promise.resolve() : LOADING[s.url] || (LOADING[s.url] = fetch(s.url).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(function (b) { return new Promise(function (ok, no) { c.decodeAudioData(b, ok, no); }); })
+      .then(function (buf) { var d = buf.getChannelData(0), p = 0; for (var i = 0; i < d.length; i += 16) p = Math.max(p, Math.abs(d[i])); NORM[s.url] = .6 / Math.max(p, .05); BUFS[s.url] = buf; })
+      .catch(function () { delete LOADING[s.url]; }));
+  }
+  function nearest(S, m, loadedOnly) { var b = null; S.samples.forEach(function (s) { if (loadedOnly && !BUFS[s.url]) return; if (!b || Math.abs(s.m - m) < Math.abs(b.m - m)) b = s; }); return b; }
+  function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  function epiano(c, m, t, dur, peak, lp) {   // the built-in soft electric piano (2-operator FM)
+    var g = c.createGain(), car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(); lp.connect(g);
+    car.frequency.value = hz(m); mod.frequency.value = hz(m) * 2;
+    mg.gain.setValueAtTime(hz(m) * 1.2, t); mg.gain.exponentialRampToValueAtTime(hz(m) * .05, t + 1.2); mod.connect(mg); mg.connect(car.frequency); car.connect(lp);
+    g.gain.setValueAtTime(peak * .55, t); g.gain.exponentialRampToValueAtTime(peak * .2, t + .5); g.gain.setValueAtTime(peak * .2, t + dur); g.gain.exponentialRampToValueAtTime(.0005, t + dur + .5);
+    car.start(t); mod.start(t); car.stop(t + dur + .55); mod.stop(t + dur + .55); return g;
+  }
+  window.MTGSound = {
+    list: function () { return SOUNDS.map(function (s) { return { key: s.key, name: s.name }; }); },
+    get: cur,
+    set: function (k) { if (!BY[k]) return; try { localStorage.setItem(KEY, k); } catch (e) {} try { window.dispatchEvent(new CustomEvent('mtgsound', { detail: k })); } catch (e) {} },
+    ctx: function (c) { if (c && c !== A) { A = c; bus = null; } return ac(); },
+    out: function (node) { OUT = node || null; bus = null; },
+    preload: function (lo, hi) {
+      var S = BY[cur()]; if (!S.samples) return Promise.resolve();
+      lo = lo == null ? 48 : lo; hi = hi == null ? 84 : hi;
+      var want = S.samples.filter(function (s) { return s.m >= lo - 5 && s.m <= hi + 17; });
+      [lo, hi].forEach(function (m) { var n = nearest(S, m); if (want.indexOf(n) < 0) want.push(n); });
+      return Promise.all(want.map(load));
+    },
+    note: function (midi, when, dur, vel, dest) {
+      var c = ac(), S = BY[cur()], v = (vel == null ? 90 : vel) / 127, peak = .9 * v * v, t = Math.max(when || 0, c.currentTime);
+      var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = .5; lp.frequency.value = 900 + Math.pow(Math.min(v, 1), 1.6) * 11000;
+      var s = S.samples && nearest(S, midi, true);
+      if (S.samples && (!s || Math.abs(s.m - midi) > 7)) { var n = nearest(S, midi); if (!BUFS[n.url]) load(n); s = null; }
+      var g;
+      if (!s) g = epiano(c, midi, t, dur, peak, lp);   // built-in, or samples not here yet: never silent
+      else {
+        g = c.createGain(); lp.connect(g);
+        var src = c.createBufferSource(); src.buffer = BUFS[s.url]; src.playbackRate.value = Math.pow(2, (midi - s.m) / 12); src.connect(lp);
+        var pk = peak * NORM[s.url] * (S.gain || 1);
+        if (S.decay) { g.gain.setValueAtTime(pk, t); g.gain.setValueAtTime(pk, t + dur); g.gain.exponentialRampToValueAtTime(.0005, t + dur + S.decay); src.start(t); src.stop(t + dur + S.decay + .05); }
+        else { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk, t + S.attack); g.gain.setValueAtTime(pk, t + dur); g.gain.exponentialRampToValueAtTime(.0005, t + dur + S.release); src.start(t); src.stop(t + dur + S.release + .05); }
+      }
+      g.connect(dest || bus);
+    }
+  };
+})();
+</script>
+<!-- MTG_SOUND end -->
 </head>
 <body>
 <canvas id="web" aria-hidden="true"></canvas>
@@ -683,6 +789,11 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
     <p class="ask" id="ask" aria-live="polite"></p>
     <div class="bar" id="barw"><i id="bar"></i></div>
     <div class="iansw" id="iansw" hidden></div>
+    <div class="pp" id="pp" hidden>
+      <div class="pp-bar"><div class="pp-oct" id="pp-oct" role="group" aria-label="Octave"><button type="button" data-o="-1" aria-pressed="false">Low</button><button type="button" data-o="0" aria-pressed="true">Middle</button><button type="button" data-o="1" aria-pressed="false">High</button></div>
+        <select id="pp-snd" title="Sound"></select><label class="pp-cols"><input type="checkbox" id="pp-cols"> Note colors</label></div>
+      <div class="pp-piano" id="pp-piano"></div>
+    </div>
     <div class="btns" id="btns">
       <button class="ans up" type="button" id="b-up" disabled><span class="ar">▲</span>SHARP<small>↑ ARROW</small></button>
       <button class="ans dn" type="button" id="b-dn" disabled><span class="ar">▼</span>FLAT<small>↓ ARROW</small></button>
@@ -1271,6 +1382,7 @@ const REGIONS = [
   { id: 'voice', name: 'Motor and speech areas', game: 'Pick a Voice', short: 'Pick a Voice', blurb: 'Hear a note or chord, then sing your note back.', color: '#ffb25e', ready: true },
   { id: 'tuner', name: 'Cerebellum', game: 'Tuner', short: 'Tuner', blurb: 'Pick an instrument and tune its strings by ear.', color: '#f4e063', ready: true },
   { id: 'scales', name: 'Parietal lobe', game: 'Scales and modes', short: 'Scales', blurb: 'A scale plays. Name it, from major and minor to every mode.', color: '#ff6fd8', ready: true },
+  { id: 'pitch', name: 'Planum temporale', game: 'Perfect Pitch', short: 'Perfect Pitch', blurb: 'One note plays, with no starting note. Which one was it?', color: '#d8ecff', ready: true },
 ];
 /* what the hover card on the brain says about each game */
 const REGION_INFO = {
@@ -1280,6 +1392,7 @@ const REGION_INFO = {
   progressions: { skill: 'Chord progressions', about: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare yours with the question, then press Submit. I, IV, V, vi and more, in major and minor keys.', facts: ['6 levels', 'Every key', '3 lives'] },
   scales: { skill: 'Scales and modes', about: 'A scale plays up and back down. Name it, from major and minor to all seven modes, pentatonics, blues, whole tone and diminished.', facts: ['8 levels', '14 scales', 'Every key'] },
   voice: { skill: 'Singing in tune', about: 'Hear it, then sing it. First you sing back a single note. Later a chord plays and the screen shows which note is yours (top, middle or bottom). Hold the mic button and hold that note steady until it locks in.', facts: ['9 levels', 'Uses your microphone', 'Headphones help'] },
+  pitch: { skill: 'Perfect pitch', about: 'Name a note with no starting note. Practice on the piano: every key plays its note once, in its own color. Then take the test: one note plays, which one was it? Start with C and G and work up to all twelve, in any octave, on any instrument.', facts: ['8 levels', '7 questions a level', 'Practice piano'] },
   tuner: { skill: 'Tuning by ear', about: 'Pick an instrument off the wall. Every string starts out of tune. Practice with the Visual tuner, or Test yourself by ear and earn up to 3 stars per string.', facts: ['6 instruments', 'Visual or by ear', 'Earn stars'] },
 };
 const FLOORS = [
@@ -1380,6 +1493,17 @@ const SLV = [   // Scales and modes: every scale, mode and color
   { name: 'Strange colors',    sub: 'Whole tone, diminished and more',     lab: '', mult: 2.3, color: '#c03bd6', tag: 'Movie music',              set: ['wt', 'dim', 'hmin', 'mmin', 'blues'] },
   { name: 'Everything',        sub: 'Every scale and mode',                lab: '', mult: 2.6, color: '#ff6fd8', tag: 'Nowhere to hide',          set: ['lyd', 'maj', 'mix', 'dor', 'nmin', 'phr', 'loc', 'hmin', 'mmin', 'majp', 'minp', 'blues', 'wt', 'dim'] },
 ];
+/* PERFECT PITCH: one note plays, name it on the piano. notes = pitch classes in the level (0 = C); any = any octave (C3 to B5); mix = a different sound every question */
+const PPLV = [
+  { name: 'Two anchors',      sub: 'C or G',                         lab: '', mult: 1.0, color: '#ff6b6b', tag: 'Start with two',        notes: [0, 7] },
+  { name: 'The triad',        sub: 'C, E or G',                      lab: '', mult: 1.2, color: '#ffb35c', tag: 'Three notes',           notes: [0, 4, 7] },
+  { name: 'Five friends',     sub: 'C, D, E, G, A',                  lab: '', mult: 1.4, color: '#f4e063', tag: 'The pentatonic five',   notes: [0, 2, 4, 7, 9] },
+  { name: 'White keys',       sub: 'All seven white keys',           lab: '', mult: 1.6, color: '#7be36a', tag: 'C to B',                notes: [0, 2, 4, 5, 7, 9, 11] },
+  { name: 'First black keys', sub: 'White keys plus F# and Bb',      lab: '', mult: 1.8, color: '#48c9f0', tag: 'No replays from here',  notes: [0, 2, 4, 5, 6, 7, 9, 10, 11] },
+  { name: 'All twelve',       sub: 'Every note',                     lab: '', mult: 2.0, color: '#7aa2ff', tag: 'The whole octave',      notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+  { name: 'Anywhere',         sub: 'Every note, any octave',         lab: '', mult: 2.3, color: '#b58cff', tag: 'High or low',           notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true },
+  { name: 'Any sound',        sub: 'Any octave, any instrument',     lab: '', mult: 2.6, color: '#d8ecff', tag: 'True perfect pitch',    notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true, mix: true },
+];
 /* PICK A VOICE: a chord plays, sing the note it asks for (the game itself is in the pick-a-voice script below). t = seconds to sing, in ms. */
 const VLV = [
   { name: 'Newbie',      sub: 'One note, with a piano to help', lab: '', mult: 1, color: '#ff7a8a', tag: 'Find it, then sing it', size: [1, 1], t: 0 },
@@ -1393,14 +1517,14 @@ const VLV = [
   { name: 'Half steps',  sub: 'Two to four notes, half steps',  lab: '', mult: 1, color: '#b58cff', tag: 'Nowhere to hide',        size: [2, 4], ivs: [1, 2, 3, 4, 5], half: true, t: 14000 },
 ];
 const gid = () => REGIONS[S.region].id, isI = () => gid() === 'intervals';
-const isV = () => gid() === 'voice', isC = () => gid() === 'chords', isSc = () => gid() === 'scales', isP = () => gid() === 'progressions' || isSc(), isQ = () => isI() || isC() || isP();   // isP: games on the progressions engine (Progressions and Scales)   // isQ: games with answer buttons, 7 questions a level
-const LV = () => (isI() ? ILV : isV() ? VLV : isC() ? CLV : isSc() ? SLV : isP() ? PLV : FLOORS), PER = () => (isQ() || isV() ? I_PER : PER_FLOOR);
-const scoresCol = () => (isI() ? 'intervals_scores' : isC() ? 'chords_scores' : isSc() ? 'scales_scores' : isP() ? 'progressions_scores' : SCORES);
+const isV = () => gid() === 'voice', isC = () => gid() === 'chords', isSc = () => gid() === 'scales', isP = () => gid() === 'progressions' || isSc(), isPP = () => gid() === 'pitch', isQ = () => isI() || isC() || isP() || isPP();   // isP: games on the progressions engine (Progressions and Scales)   // isQ: games with answer buttons, 7 questions a level
+const LV = () => (isI() ? ILV : isPP() ? PPLV : isV() ? VLV : isC() ? CLV : isSc() ? SLV : isP() ? PLV : FLOORS), PER = () => (isQ() || isV() ? I_PER : PER_FLOOR);
+const scoresCol = () => (isI() ? 'intervals_scores' : isPP() ? 'pitch_scores' : isC() ? 'chords_scores' : isSc() ? 'scales_scores' : isP() ? 'progressions_scores' : SCORES);
 const PER_FLOOR = 10, LIVES = 3, LIMIT = 3000, NOTE_S = 0.85, GAP_S = 0.3, MAX_ROUND_PTS = 625;
 const SCORES = 'synapse_scores';
 const S = { region: 0, sel: 0, mode: 'home', floor: 0, startFloor: 0, inFloor: 0, rounds: 0, correct: 0, lives: LIVES, score: 0, streak: 0, bestStreak: 0, tight: null, phase: 'idle', cur: null, t2end: 0, tok: 0, practiceFloor: 0, picked: 0, run: null };
 const FLOOR_KEY = 'synapse_best_v1:', I_BEST_KEY = 'intervals_best_v1:';
-const bk = g => ({ intervals: I_BEST_KEY, chords: 'chords_best_v1:', progressions: 'progressions_best_v1:', scales: 'scales_best_v1:' }[g || gid()] || FLOOR_KEY);
+const bk = g => ({ intervals: I_BEST_KEY, chords: 'chords_best_v1:', progressions: 'progressions_best_v1:', scales: 'scales_best_v1:', pitch: 'pitch_best_v1:' }[g || gid()] || FLOOR_KEY);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = n => Math.floor(Math.random() * n);
 
@@ -1432,8 +1556,8 @@ const Web = (() => {
   let W = 0, H = 0, dpr = 1, nodes = [], edges = [], sparks = [], pulseT = 0, badT = 0, accNow = [72, 224, 200], accTo = [72, 224, 200], nextSpark = 0;
   // macro brain (side view, front on the right), coordinates in "brain units"
   let bn = [], be = [], litSet = new Set(), focus = -1, madj = null, msig = [], mflash = [], nextSig = 0, lastSigMs = 0;   // msig: electric signals racing through the whole brain
-  const CENTERS = [[0.26, 0.07], [-0.30, -0.18], [-0.02, 0.08], [0.50, -0.16], [0.14, -0.38], [-0.35, 0.30], [-0.14, -0.40]];   // auditory cortex, association area, limbic system, prefrontal, motor and speech, cerebellum, parietal lobe (model faces right)
-  const LABELS = [[1.1, 0.1, 'l'], [-0.95, -0.28, 'r'], [1.1, 0.56, 'l'], [1.1, -0.38, 'l'], [0.3, -0.68, 'c'], [-0.95, 0.5, 'r'], [-0.62, -0.66, 'c']];
+  const CENTERS = [[0.26, 0.07], [-0.30, -0.18], [-0.02, 0.08], [0.50, -0.16], [0.14, -0.38], [-0.35, 0.30], [-0.14, -0.40], [0.04, -0.15]];   // auditory cortex, association area, limbic system, prefrontal, motor and speech, cerebellum, parietal lobe, planum temporale (model faces right)
+  const LABELS = [[1.1, 0.1, 'l'], [-0.95, -0.28, 'r'], [1.1, 0.56, 'l'], [1.1, -0.38, 'l'], [0.3, -0.68, 'c'], [-0.95, 0.5, 'r'], [-0.62, -0.66, 'c'], [-0.95, 0.11, 'r']];
   const CD = CENTERS.map(c => [-c[0], c[1]]), LD = LABELS.map(l => [-l[0], l[1], l[2] === 'l' ? 'r' : l[2] === 'r' ? 'l' : 'c']);   // the model is drawn facing right; on screen it is mirrored so the face looks left
   // camera: u = 0 close-up web, 1 whole brain
   let u = 1, from = 1, to = 1, t0 = 0, dur = 1, resolve = null, tgtFloor = 0, lastU = 1, mid = 0;
@@ -1457,7 +1581,7 @@ const Web = (() => {
   const inBrain = (x, y) => { if (inEll(x, y, -0.35, 0.3, 0.2, 0.15, -.12)) return true; if (x < -0.7 || x > 0.7 || y < -0.52 || y > 0.72) return false; let ins = false; for (let a = 0, b = OUTLINE.length - 1; a < OUTLINE.length; b = a++) { const p = OUTLINE[a], q = OUTLINE[b]; if ((p[1] > y) !== (q[1] > y) && x < (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]) + p[0]) ins = !ins; } return ins; };
   function regionOf(x, y) {
     let best = -1, bd = 1e9; CENTERS.forEach((c, i) => { const d = Math.hypot(x - c[0], y - c[1]); if (d < bd) { bd = d; best = i; } });
-    return bd < [.27, .24, .21, .28, .24, .2, .22][best] ? best : -1;   // how far each area reaches (the last is the parietal lobe)
+    return bd < [.27, .24, .21, .28, .24, .2, .22, .16][best] ? best : -1;   // how far each area reaches (the last two are the parietal lobe and the planum temporale)
   }
   // a very light, see-through "skin" over the whole brain: a soft body, a faint rim of light and a few folds (built once, drawn scaled)
   const SK = { x0: -0.76, y0: -0.58, w: 1.52, h: 1.42, px: 380 }; let skinImg = null;
@@ -1513,7 +1637,7 @@ const Web = (() => {
   function build() {
     dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const n = Math.max(40, Math.min(120, Math.round(W * H / 11000)));
-    nodes = []; let tries = 0;
+    nodes = []; sparks = []; let tries = 0;   // sparks point at the old network, so they go too
     while (nodes.length < n && tries++ < 4000) {
       const x = Math.random() * W, y = Math.random() * H;
       if (nodes.every(o => (o.x - x) ** 2 + (o.y - y) ** 2 > 34 * 34)) nodes.push({ x, y, r: 1.4 + Math.random() * 2, hub: Math.random() < .1, ph: Math.random() * 6.28, sp: .15 + Math.random() * .3, amp: 2 + Math.random() * 7, d: 0 });
@@ -1771,7 +1895,7 @@ async function banner(fi, ms = 1500) {
 const reachedFloors = () => { const b = bestRec(); return Math.min(LV().length, b.floor); };
 
 /* ---------- progress: levels finished per game, kept in Firebase (and cached on this device) ---------- */
-const PROG_KEY = 'earbrain_prog_v1:', PROGRESS = 'earbrain_progress', GAMES = ['synapse', 'intervals', 'voice', 'chords', 'progressions', 'scales'];
+const PROG_KEY = 'earbrain_prog_v1:', PROGRESS = 'earbrain_progress', GAMES = ['synapse', 'intervals', 'voice', 'chords', 'progressions', 'scales', 'pitch'];
 let progCache = null;
 const progDocId = () => { const p = getProfile(); return p ? ((p.classCode || 'none') + '_' + sidOf(p)).slice(0, 60) : null; };
 function progLocal() {
@@ -1788,7 +1912,7 @@ async function pushProg() {
   try { localStorage.setItem(PROG_KEY + sidKey(), JSON.stringify(progLocal())); } catch {}
   try {
     const { fs, db } = await fb(), id = progDocId(), l = progLocal(), arr = (g, n = 6) => Array.from({ length: n }, (_, i) => !!l[g][i]);
-    await wait(fs.setDoc(fs.doc(db, PROGRESS, id), { name: displayName(p), class_code: p.classCode || '', synapse: arr('synapse'), intervals: arr('intervals'), voice: arr('voice', VLV.length), chords: arr('chords', CLV.length), progressions: arr('progressions', PLV.length), scales: arr('scales', SLV.length), updated_at: fs.serverTimestamp() }));
+    await wait(fs.setDoc(fs.doc(db, PROGRESS, id), { name: displayName(p), class_code: p.classCode || '', synapse: arr('synapse'), intervals: arr('intervals'), voice: arr('voice', VLV.length), chords: arr('chords', CLV.length), progressions: arr('progressions', PLV.length), scales: arr('scales', SLV.length), pitch: arr('pitch', PPLV.length), updated_at: fs.serverTimestamp() }));
   } catch {}   // offline: it is cached here and goes up with the next level
 }
 async function pullProg() {
@@ -1859,7 +1983,7 @@ async function enterRegion(i) {
   show(null); Web.accent(r.color); Web.lit([i], i);
   await Web.go('micro', { floor: i, dur: 1.9 }); S.busy = false; if (r.id === 'tuner') showWall(); else showLadder();
 }
-const LAD_SUB = { synapse: 'Two notes play. Was the second one sharp or flat? A run has no levels: it starts wide and gets closer with every right answer. 3 lives, 2 replays, 4 seconds to answer. How deep can you go?', intervals: 'Two notes play. Name the distance between them. Seven questions a level, and 3 lives.', progressions: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare, then Submit. Seven questions a level, and 3 lives.', scales: 'A scale plays up and back down. Name it: major, minor, every mode, pentatonics, blues and more. Seven questions a level, and 3 lives.', chords: 'A chord plays. What color is it? Tap the feeling that matches. Seven questions a level, and 3 lives.', voice: 'Listen, then hold the mic button and sing. Early levels: one note. Later levels: a chord plays and you sing the note it points to. Hold it steady for a second to lock it in. Lock in 7 to climb.' };
+const LAD_SUB = { synapse: 'Two notes play. Was the second one sharp or flat? A run has no levels: it starts wide and gets closer with every right answer. 3 lives, 2 replays, 4 seconds to answer. How deep can you go?', intervals: 'Two notes play. Name the distance between them. Seven questions a level, and 3 lives.', progressions: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare, then Submit. Seven questions a level, and 3 lives.', scales: 'A scale plays up and back down. Name it: major, minor, every mode, pentatonics, blues and more. Seven questions a level, and 3 lives.', chords: 'A chord plays. What color is it? Tap the feeling that matches. Seven questions a level, and 3 lives.', pitch: 'One note plays, once. Which note was it? Tap it on the piano. Seven questions a level, and 3 lives. Practice opens the piano: every key plays its note once.', voice: 'Listen, then hold the mic button and sing. Early levels: one note. Later levels: a chord plays and you sing the note it points to. Hold it steady for a second to lock it in. Lock in 7 to climb.' };
 function showLadder() {
   S.mode = 'ladder'; { const r = REGIONS[S.region]; $('lad-eye').textContent = r.name; $('lad-title').textContent = r.game; $('lad-sub').textContent = LAD_SUB[r.id]; } $('ladder').classList.remove('trans'); $('lb-btn').hidden = isV(); Web.accent(REGIONS[S.region].color); Web.lit([S.region], S.region);
   show('ladder'); drawLadder(); selUI();
@@ -1928,7 +2052,7 @@ function selUI() {
   const f = LV()[S.sel], done = doneArr(), cur = openLevel(), tl = S.teach && S.teach.region === S.region && S.teach.floor != null ? S.teach.floor : -1, locked = !done[S.sel] && S.sel > cur && S.sel > tl, el = $('lad-sel');   // the teacher's starting level (and below) is open
   el.style.setProperty('--lc', f.color);
   el.innerHTML = `<b>Level ${S.sel + 1}: ${f.name}</b><span class="c">${f.sub}${isV() ? '' : ` · ×${f.mult} points`}</span>${done[S.sel] ? ' Done. Run it again to beat your score.' : locked ? ' Finish the earlier levels to unlock this one. You can still practice it.' : ` ${isV() ? 'Lock in seven notes' : PER() === 7 ? 'Seven rounds' : 'Ten rounds'} to climb to the next level.`}`;
-  $('go-run').disabled = locked; $('go-run').textContent = locked ? 'Locked' : S.sel > 0 || done[0] ? `Start run at level ${S.sel + 1}` : 'Start run';
+  $('go-run').disabled = locked; const runW = isPP() ? 'test' : 'run'; $('go-run').textContent = locked ? 'Locked' : S.sel > 0 || done[0] ? `Start the ${runW} at level ${S.sel + 1}` : isPP() ? 'Start the test' : 'Start run';
   if (gid() === 'synapse') {   // the Run has no levels; the ladder is for practice, and its neurons light up as runs get close enough
     el.innerHTML = `<b>Level ${S.sel + 1}: ${f.name}</b><span class="c">${f.sub}</span> Practice any level. A run has no levels: it starts at ±50¢ and gets closer with every right answer, and ${done[S.sel] ? 'you have already reached this one in a run.' : 'this neuron lights up when a run gets this close.'}`;
     $('go-run').disabled = false; $('go-run').textContent = 'Start run';
@@ -1988,13 +2112,14 @@ async function startPractice() {
   Object.assign(S, { mode: 'practice', floor: S.practiceFloor, inFloor: 0, rounds: 0, correct: 0, lives: LIVES, score: 0, streak: 0, bestStreak: 0, tight: null });
   $('b-exit').textContent = 'Done'; $('pr-tools').hidden = false; $('result').hidden = true; $('btns').hidden = isQ(); $('iansw').hidden = !isQ(); gameLook();
   setFloorUI(); hudUI();
-  await zoomIn(S.floor);
+  await zoomIn(S.floor, !isPP());
   show('game'); nextRound(true);
 }
 function nextRound(first) {
   if (isI()) return iRound();
   if (isC()) return cRound();
   if (isP()) return pRound();
+  if (isPP()) return ppRound();
   S.tok++; const tok = S.tok;
   S.phase = 'listen';
   const extra = S.floor >= LV().length ? S.rounds - LV().length * PER_FLOOR : 0;
@@ -2036,6 +2161,7 @@ function replay() {
   if (isI()) return iReplay();
   if (isC()) return cReplay();
   if (isP()) return pReplay();
+  if (isPP()) return ppReplay();
   if (S.mode !== 'practice' || (S.phase !== 'answer' && S.phase !== 'result')) return;
   S.tok++; const tok = S.tok; const was = S.phase;
   S.phase = was === 'result' ? 'result' : 'listen'; $('b-up').disabled = was !== 'result' ? true : $('b-up').disabled; $('b-dn').disabled = was !== 'result' ? true : $('b-dn').disabled;
@@ -2541,7 +2667,7 @@ addEventListener('keydown', e => {
 
 /* ---------- wiring ---------- */
 $('go-run').onclick = () => { S.startFloor = S.sel; startRun(); };
-$('go-practice').onclick = () => { S.practiceFloor = S.sel; show('pick'); drawPick(); };
+$('go-practice').onclick = () => { S.practiceFloor = S.sel; if (isPP()) { startPractice(); return; } show('pick'); drawPick(); };
 $('lad-back').onclick = goHome;
 $('lad-svg').addEventListener('click', e => { const g = e.target.closest('.nd'); if (!g) return; S.sel = +g.dataset.i; drawLadder(); selUI(); });
 $('lad-svg').addEventListener('keydown', e => { const g = e.target.closest('.nd'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); S.sel = +g.dataset.i; drawLadder(); selUI(); } });
@@ -3021,7 +3147,7 @@ const CBURST = (() => {
   };
 })();
 // the whole brain behind the game glows the chord's color for a moment, then goes back to the level's color
-function cGlow(col) { Web.accent(col); clearTimeout(cGlow.t); cGlow.t = setTimeout(() => { if ((isC() || isP()) && !$('game').hidden) Web.accent(LV()[Math.min(S.floor, LV().length - 1)].color); }, 2600); }
+function cGlow(col) { Web.accent(col); clearTimeout(cGlow.t); cGlow.t = setTimeout(() => { if ((isC() || isP() || isPP()) && !$('game').hidden) Web.accent(LV()[Math.min(S.floor, LV().length - 1)].color); }, 2600); }
 
 /* ---------- sound (the real recorded instruments from Pick a Voice) ---------- */
 function cBlock(notes, when = .12, fire = true) {
@@ -3103,10 +3229,10 @@ function cAnswer(k) {
 
 /* ---------- screen pieces ---------- */
 function gameLook() {   // the game screen shows the neuron network for Chord Colors, the two note circles otherwise
-  const C = isC(), N = C || isP(); $('cnet-wrap').hidden = !N; document.querySelector('#game .notes').hidden = N; $('b-broken').hidden = !C; $('b-cnext').hidden = true; $('c-snd').hidden = !N; $('ppath').hidden = !isP();
+  const C = isC(), N = C || isP() || isPP(); $('cnet-wrap').hidden = !N; document.querySelector('#game .notes').hidden = N; $('b-broken').hidden = !C; $('b-cnext').hidden = true; $('c-snd').hidden = !(C || isP()); $('ppath').hidden = !isP(); $('pp').hidden = !isPP(); $('b-again').hidden = false;
   $('ask').className = 'ask'; $('b-again').disabled = false; $('b-pmine').hidden = $('b-psub').hidden = true; $('b-again').textContent = '🔁 Hear it again';
-  $('iansw').classList.toggle('chords', C); S.cRecent = []; $('game').classList.toggle('prog', isP());
-  if (N) $('c-snd').innerHTML = Object.entries(PAV.snd.SOUNDS).map(([k, v]) => `<option value="${k}"${k === PAV.snd.sound ? ' selected' : ''}>${v.name}</option>`).join('');
+  $('iansw').classList.toggle('chords', C); S.cRecent = []; $('game').classList.toggle('prog', isP() || isPP());
+  if (C || isP()) $('c-snd').innerHTML = Object.entries(PAV.snd.SOUNDS).map(([k, v]) => `<option value="${k}"${k === PAV.snd.sound ? ' selected' : ''}>${v.name}</option>`).join('');
 }
 $('b-cnext').onclick = () => next();
 $('b-broken').onclick = () => { const c = S.cur; if (!isC() || !c || c.brokenUsed || S.phase !== 'answer') return; c.brokenUsed = true; $('b-broken').disabled = true; cBroken(c.notes); };
@@ -3359,6 +3485,146 @@ addEventListener('keydown', e => {
   else if (S.cur && S.cur.type === 'p' && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); if (!$('b-pmine').disabled) pHearMine(); }
   else if (S.cur && S.cur.type === 'p' && e.key === 'Backspace') { e.preventDefault(); pUnplaceLast(); }
   else if (S.cur && S.cur.type === 'p' && e.key === 'Enter' && S.phase === 'answer') { e.preventDefault(); e.stopImmediatePropagation(); pSubmit(); }
+});
+</script>
+<script id="perfect-pitch">
+/* ---------- PERFECT PITCH: one note plays, name it on the piano (spec: docs/perfect-pitch-spec.md).
+   Run = the test (PPLV, 7 questions a level, 3 lives). Practice = the piano itself: every key plays its note once, in its own color.
+   Sounds: the shared MTGSound engine plus a pure tone. A soft scramble of notes plays before each question so the last note can't be used as a reference. ---------- */
+const PP_NAMES = ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭', 'G', 'G♯/A♭', 'A', 'A♯/B♭', 'B'];
+const PP_SHORT = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'], PP_TXT = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const PP_COL = Array.from({ length: 12 }, (_, i) => {   // a color wheel, one hue per note (C red, going round), as hex for the network and the burst
+  const h = i * 30, f = n => { const k = (n + h / 30) % 12, v = .62 - .9 * .38 * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(v * 255).toString(16).padStart(2, '0'); };
+  return '#' + f(0) + f(8) + f(4);
+});
+const PP_KEYS = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12 };
+const ppStore = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
+const PP = { oct: 0, colors: ppStore('pp_cols_v1') !== '0', heard: 0, sound: ppStore('pp_sound_v1') || 'piano', out: null, ctx: null };
+const ppSounds = () => [...MTGSound.list(), { key: 'sine', name: 'Pure tone' }];
+if (!ppSounds().some(x => x.key === PP.sound)) PP.sound = 'piano';
+const ppCol = pc => PP.colors ? PP_COL[pc] : '#d8ecff';
+function ppOut() {   // the game's own output with a soft room reverb; the shared engine plays into it
+  const c = ac(); if (!c) return null;
+  if (PP.ctx !== c) {
+    PP.ctx = c; PP.out = c.createGain(); PP.out.gain.value = .9; PP.out.connect(c.destination);
+    const wet = c.createGain(), rev = c.createConvolver(), len = Math.floor(c.sampleRate * 1.6), ir = c.createBuffer(2, len, c.sampleRate); wet.gain.value = .2;
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+    rev.buffer = ir; PP.out.connect(rev).connect(wet).connect(c.destination);
+    MTGSound.ctx(c); MTGSound.out(PP.out);
+  }
+  return c;
+}
+function ppWith(k, fn) { const was = MTGSound.get(); if (was !== k) MTGSound.set(k); try { return fn(); } finally { if (was !== k) MTGSound.set(was); } }   // play one sound without changing the student's shared choice
+function ppLoad(k, lo, hi) { if (k === 'sine' || !ppOut()) return Promise.resolve(); return ppWith(k, () => MTGSound.preload(lo, hi)); }
+function ppNote(m, when = 0, dur = 1.3, k = PP.sound, vel = 92) {
+  const c = ppOut(); if (!c) return; const t = c.currentTime + .03 + when;
+  if (k === 'sine') {
+    const o = c.createOscillator(), g = c.createGain(); o.frequency.value = 440 * Math.pow(2, (m - 69) / 12);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.3, t + .03); g.gain.setValueAtTime(.3, t + dur); g.gain.exponentialRampToValueAtTime(.0005, t + dur + .35);
+    o.connect(g).connect(PP.out); o.start(t); o.stop(t + dur + .4); return;
+  }
+  ppWith(k, () => MTGSound.note(m, t, dur, vel));
+}
+function ppScramble() { for (let i = 0; i < 7; i++) ppNote(48 + rand(36), i * .07, .12, 'epiano', 50); return 750; }
+
+/* the piano: one octave, C to C */
+(function ppBuild() {
+  const whites = [0, 2, 4, 5, 7, 9, 11, 12], blacks = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 }, W = 100 / whites.length, kw = 'ASDFGHJK', kb = { 1: 'W', 3: 'E', 6: 'T', 8: 'Y', 10: 'U' };
+  let h = '';
+  whites.forEach((n, i) => h += `<div class="pk w" data-s="${n}" style="left:${i * W}%;width:${W}%;--nc:${PP_COL[n % 12]}"><span class="sw"></span>${PP_SHORT[n % 12]}<kbd>${kw[i]}</kbd></div>`);
+  Object.entries(blacks).forEach(([n, i]) => h += `<div class="pk b" data-s="${n}" style="left:${(i + 1) * W - W * .3}%;width:${W * .6}%;--nc:${PP_COL[n]}"><span class="sw"></span>${PP_SHORT[n]}<kbd>${kb[n]}</kbd></div>`);
+  $('pp-piano').innerHTML = h;
+})();
+const ppKey = n => document.querySelector(`#pp-piano .pk[data-s="${n}"]`);
+function ppClear() { document.querySelectorAll('#pp-piano .pk').forEach(k => k.classList.remove('on', 'right', 'wrong', 'off')); }
+function ppLight(n) { const k = ppKey(n); k.classList.remove('on'); void k.offsetWidth; k.classList.add('on'); clearTimeout(k._t); k._t = setTimeout(() => k.classList.remove('on'), 550); }
+function ppBar(free) {
+  $('pp').classList.toggle('col', PP.colors); $('pp-cols').checked = PP.colors; $('pp-oct').hidden = !free;
+  $('pp-snd').innerHTML = ppSounds().map(x => `<option value="${x.key}"${x.key === PP.sound ? ' selected' : ''}>${x.name}</option>`).join('');
+  $('pp-snd').disabled = !free && PPLV[Math.min(S.floor, PPLV.length - 1)].mix;
+  document.querySelectorAll('#pp-oct button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.o === PP.oct));
+}
+
+/* Practice: tap a key, hear it once */
+function ppFree() {
+  S.phase = 'free'; ppClear(); ppBar(true);
+  $('f-no').textContent = 'Practice'; $('f-name').textContent = 'Learn the notes'; $('f-cents').textContent = 'Every key plays its note once';
+  $('pr-tools').hidden = false; $('b-again').hidden = true; $('b-cnext').hidden = true;
+  cCenter('♪', 'Tap a key'); $('ask').className = 'ask c-ask'; $('ask').innerHTML = 'Tap any key. Listen, and connect the sound to the name.';
+  $('prog').innerHTML = `NOTES <b>${PP.heard}</b>`; ppLoad(PP.sound, 48, 84);
+}
+
+/* the test */
+async function ppRound() {
+  S.tok++; const tok = S.tok;
+  setFloorUI(); hudUI();
+  $('btns').hidden = true; $('iansw').hidden = true; $('barw').style.visibility = 'hidden'; $('result').hidden = true; $('pp').hidden = false;
+  if (S.mode === 'practice') return ppFree();
+  S.phase = 'listen'; ppClear(); ppBar(false);
+  const fl = Math.min(S.floor, PPLV.length - 1), lv = PPLV[fl], recent = S.cRecent || [];
+  let pc; do pc = lv.notes[rand(lv.notes.length)]; while (recent.length >= 2 && recent.every(r => r === pc) && lv.notes.length > 1);   // never the same note three times running
+  S.cRecent = [...recent.slice(-1), pc];
+  const m = lv.any ? 48 + pc + 12 * rand(3) : 60 + pc, all = ppSounds(), k = lv.mix ? all[rand(all.length)].key : PP.sound;
+  S.cur = { pc, m, k, again: fl < 4 ? 1 : 0, t0: 0 };
+  document.querySelectorAll('#pp-piano .pk').forEach(x => x.classList.toggle('off', !lv.notes.includes(+x.dataset.s % 12)));
+  $('pr-tools').hidden = false; $('b-cnext').hidden = true; $('b-again').hidden = !S.cur.again; $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (1 left)';
+  cCenter('?', 'Listen'); $('ask').className = 'ask c-ask'; $('ask').innerHTML = 'Listen…';
+  await ppLoad(k, lv.any ? 48 : 60, lv.any ? 83 : 72); if (S.tok !== tok) return;
+  const wait = S.rounds > 0 ? ppScramble() : 0;
+  setTimeout(() => {
+    if (S.tok !== tok) return;
+    ppNote(m, 0, 1.3, k); CNET.fire(3); S.cur.t0 = performance.now(); S.phase = 'answer';
+    $('ask').innerHTML = 'Which note was it? <b>Tap it on the piano.</b>' + (lv.mix ? ` <span style="color:var(--mut)">(${all.find(x => x.key === k).name})</span>` : '');
+    $('b-again').disabled = !S.cur.again;
+  }, wait);
+}
+function ppReplay() {
+  const c = S.cur; if (S.mode === 'practice' || !c || S.phase !== 'answer' || !c.again) return;
+  c.again--; ppNote(c.m, 0, 1.3, c.k); CNET.fire(2); $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (0 left)';
+}
+function ppAnswer(pc) {
+  if (S.phase !== 'answer') return;
+  const run = S.mode === 'run', c = S.cur, ok = pc === c.pc, fl = Math.min(S.floor, PPLV.length - 1), lv = PPLV[fl], col = ppCol(c.pc); ++S.tok;
+  S.phase = 'result'; S.rounds++; if (run) S.inFloor++;
+  ppKey(c.pc).classList.add('right'); if (!ok) ppKey(pc).classList.add('wrong');
+  cCenter(PP_NAMES[c.pc], ok ? 'Yes!' : 'not ' + PP_SHORT[pc], col); CNET.flood(col); CBURST.go(col, ok ? 1 : .55); cGlow(col);
+  let pts = 0;
+  if (ok) {
+    S.correct++; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+    if (run) { const secs = (performance.now() - c.t0) / 1000; pts = Math.round((100 + Math.min(S.streak, 10) * 8) * lv.mult + Math.max(0, 10 * (5 - secs))); S.score += pts; }   // faster answers earn a little more (up to 50)
+    Web.pulse(); ppNote(c.m, .1, 1.1, c.k);
+  } else {   // yours, then the right one, so the difference is heard
+    S.streak = 0; if (run) S.lives--; Web.bad(); CNET.flicker(ppCol(pc)); ppNote(c.m - c.pc + pc, .1, .9, c.k); ppNote(c.m, 1.25, 1.2, c.k);
+  }
+  MTG_HIST.note('pitch', [`Level ${fl + 1}: ${lv.name}`, PP_TXT[c.pc]], ok);
+  hudUI();
+  const over = run && S.lives <= 0, floorDone = run && S.floor < PPLV.length && S.inFloor >= I_PER;
+  $('ask').className = 'ask c-ask ' + (ok ? 'good' : 'bad');
+  $('ask').innerHTML = (ok ? '<b class="c-ok">Correct!</b> ' : '<b class="c-no">Not quite.</b> ') + `It was <b style="color:${col}">${PP_NAMES[c.pc]}</b>.` + (!ok ? ` You picked ${PP_SHORT[pc]}: yours, then the right one.` : '') + (ok && run ? ` <b>+${pts}</b>` : '') + (!ok && run ? (over ? ' Last life.' : ` ${S.lives} ${S.lives === 1 ? 'life' : 'lives'} left.`) : '') + ' <span style="color:var(--mut)">Tap keys to compare.</span>';
+  $('b-again').hidden = true; $('b-cnext').hidden = false; $('b-cnext').textContent = over ? 'See results ↵' : floorDone ? 'Next level ↵' : 'Next ↵'; $('b-cnext').focus({ preventScroll: true });
+  S.over = over; S.floorDone = floorDone;
+}
+function ppPress(n) {
+  if (!isPP() || $('game').hidden) return;
+  const pc = n % 12;
+  if (S.phase === 'free') {
+    const m = 60 + 12 * PP.oct + n, col = ppCol(pc);
+    ppNote(m); ppLight(n); cCenter(PP_NAMES[pc], PP_TXT[pc] + (Math.floor(m / 12) - 1), col); CNET.flood(col); cGlow(col);
+    $('prog').innerHTML = `NOTES <b>${++PP.heard}</b>`; return;
+  }
+  if (S.phase === 'answer') return ppAnswer(pc);
+  if (S.phase === 'result' && S.cur) { ppNote(S.cur.m - S.cur.pc + n, 0, 1, S.cur.k); ppLight(n); }   // after answering, keys play in the question's octave and sound
+}
+$('pp-piano').addEventListener('pointerdown', e => { const k = e.target.closest('.pk'); if (k) { e.preventDefault(); ppPress(+k.dataset.s); } });
+$('pp-oct').addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (!b) return; PP.oct = +b.dataset.o; ppBar(true); ppLoad(PP.sound, 48, 84); });
+$('pp-snd').onchange = e => { PP.sound = e.target.value; ppStore('pp_sound_v1', PP.sound); if (PP.sound !== 'sine') MTGSound.set(PP.sound); ppLoad(PP.sound, 48, 84); };   // the choice carries over to the other games
+$('pp-cols').onchange = e => { PP.colors = e.target.checked; ppStore('pp_cols_v1', PP.colors ? '1' : '0'); $('pp').classList.toggle('col', PP.colors); };
+addEventListener('keydown', e => {
+  if ($('game').hidden || !isPP() || !$('welcome').hidden || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  const n = PP_KEYS[e.key.toLowerCase()];
+  if (n != null) { e.preventDefault(); ppPress(n); }
+  else if (e.key === 'r' || e.key === 'R') ppReplay();
 });
 </script>
 <script id="sharp-run">
