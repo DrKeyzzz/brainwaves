@@ -148,7 +148,7 @@
 <meta name="description" content="Ear training inside one brain. Each region of the brain is a different game. Start with Sharp or Flat?: was the second note higher or lower?">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@900&display=swap">
 <style>
 :root{--bg:#070b16;--panel:#0d1530;--line:#2c3a63;--ink:#e8f1ff;--mut:#8da0c4;--acc:#48e0c8;--acc2:#7aa2ff;--bad:#ff6b8b;--ok:#48e0c8}
 *{box-sizing:border-box}
@@ -514,6 +514,15 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 #pp:not([hidden]) ~ #pr-tools .btn{flex:0 1 260px}
 .pk.off{filter:brightness(.32) saturate(.3);pointer-events:none}
 @media (max-width:520px){.pk kbd{display:none}}
+/* Perfect Pitch level 9: the Distractors (evil notes fly at you, the word flashes, the screen shakes) */
+#pp-fx{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none}
+#pp-dword{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);z-index:31;pointer-events:none;font:900 clamp(30px,9vw,92px) Orbitron,Inter,sans-serif;letter-spacing:.08em;color:#ff2d55;opacity:0;white-space:nowrap;transition:opacity .4s}
+#pp-dword.on{opacity:1;animation:ppFlash .16s steps(2) infinite,ppGlitch .3s steps(3) infinite;text-shadow:3px 0 #00e5ff,-3px 0 #9b30ff,0 0 30px #ff2d55,0 0 70px #ff2d55aa;transition:none}
+@keyframes ppFlash{0%{opacity:1}50%{opacity:.35}}
+@keyframes ppGlitch{0%{transform:translate(-50%,-50%) skewX(0)}33%{transform:translate(calc(-50% + 6px),-50%) skewX(-12deg)}66%{transform:translate(calc(-50% - 5px),calc(-50% + 3px)) skewX(8deg)}}
+#game.pp-shake .stage{animation:ppShake .5s linear infinite}
+@keyframes ppShake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(4px,-4px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(5px,2px)}}
+#game.pp-evil .c-center b{color:#ff2d55;text-shadow:0 0 24px #ff2d55}
 .p-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%);padding:12px 18px;border-radius:14px;font:800 22px Inter,sans-serif;color:#fff;background:color-mix(in srgb,var(--c) 40%,#0b1226);border:2px solid var(--c);box-shadow:0 0 24px var(--c)}
 #b-psub:not(:disabled){border-color:var(--ok);box-shadow:0 0 18px #48e0c855}
 .ib.cc.rn{font-size:20px}
@@ -679,6 +688,7 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 <body>
 <canvas id="web" aria-hidden="true"></canvas>
 <canvas id="cburst" aria-hidden="true"></canvas>
+<canvas id="pp-fx" aria-hidden="true"></canvas><div id="pp-dword" aria-hidden="true">DISTRACTORS</div>
 <div id="tip" class="tip" hidden></div>
 
 <header class="top">
@@ -1392,7 +1402,7 @@ const REGION_INFO = {
   progressions: { skill: 'Chord progressions', about: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare yours with the question, then press Submit. I, IV, V, vi and more, in major and minor keys.', facts: ['6 levels', 'Every key', '3 lives'] },
   scales: { skill: 'Scales and modes', about: 'A scale plays up and back down. Name it, from major and minor to all seven modes, pentatonics, blues, whole tone and diminished.', facts: ['8 levels', '14 scales', 'Every key'] },
   voice: { skill: 'Singing in tune', about: 'Hear it, then sing it. First you sing back a single note. Later a chord plays and the screen shows which note is yours (top, middle or bottom). Hold the mic button and hold that note steady until it locks in.', facts: ['9 levels', 'Uses your microphone', 'Headphones help'] },
-  pitch: { skill: 'Perfect pitch', about: 'Name a note with no starting note. Practice on the piano: every key plays its note once, in its own color. Then take the test: one note plays, which one was it? Start with C and G and work up to all twelve, in any octave, on any instrument.', facts: ['8 levels', '7 questions a level', 'Practice piano'] },
+  pitch: { skill: 'Perfect pitch', about: 'Name a note with no starting note. Practice on the piano: every key plays its note once, in its own color. Then take the test: one note plays, which one was it? Start with C and G and work up to all twelve, in any octave, on any instrument. Level 9 sends in the Distractors, so no note can help you find the next one.', facts: ['9 levels', '7 questions a level', 'Level 9: the Distractors'] },
   tuner: { skill: 'Tuning by ear', about: 'Pick an instrument off the wall. Every string starts out of tune. Practice with the Visual tuner, or Test yourself by ear and earn up to 3 stars per string.', facts: ['6 instruments', 'Visual or by ear', 'Earn stars'] },
 };
 const FLOORS = [
@@ -1503,6 +1513,7 @@ const PPLV = [
   { name: 'All twelve',       sub: 'Every note',                     lab: '', mult: 2.0, color: '#7aa2ff', tag: 'The whole octave',      notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
   { name: 'Anywhere',         sub: 'Every note, any octave',         lab: '', mult: 2.3, color: '#b58cff', tag: 'High or low',           notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true },
   { name: 'Any sound',        sub: 'Any octave, any instrument',     lab: '', mult: 2.6, color: '#d8ecff', tag: 'True perfect pitch',    notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true, mix: true },
+  { name: 'Ultimate',         sub: 'One note, then the Distractors', lab: '', mult: 3.2, color: '#ff2d55', tag: 'No anchors allowed',    notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true, mix: true, ultimate: true },
 ];
 /* PICK A VOICE: a chord plays, sing the note it asks for (the game itself is in the pick-a-voice script below). t = seconds to sing, in ms. */
 const VLV = [
@@ -3525,6 +3536,73 @@ function ppNote(m, when = 0, dur = 1.3, k = PP.sound, vel = 92) {
   }
   ppWith(k, () => MTGSound.note(m, t, dur, vel));
 }
+/* Level 9: the Distractors. About 3 seconds of half-step clusters on random instruments all over the keyboard, two sour slides
+   and a noise wash, while mean little notes fly out of the brain at the player. Nothing of the last note survives. Test only, never Practice. */
+function ppSlide(m0, m1, at, dur) {
+  const c = ppOut(), t = c.currentTime + .03 + at, o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), f = m => 440 * Math.pow(2, (m - 69) / 12);
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(f(m0), t); o.frequency.exponentialRampToValueAtTime(f(m1), t + dur); lp.frequency.value = 1800;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.08, t + .05); g.gain.exponentialRampToValueAtTime(.0005, t + dur); o.connect(lp).connect(g).connect(PP.out); o.start(t); o.stop(t + dur + .05);
+}
+function ppWash(at, dur) {
+  const c = ppOut(), t = c.currentTime + .03 + at, b = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(); src.buffer = b; bp.type = 'bandpass'; bp.Q.value = .8;
+  bp.frequency.setValueAtTime(300, t); bp.frequency.exponentialRampToValueAtTime(6000, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.22, t + .08); g.gain.exponentialRampToValueAtTime(.0005, t + dur); src.connect(bp).connect(g).connect(PP.out); src.start(t);
+}
+const PPFX = (() => {   // the evil notes: born in the middle, they fly straight at you, growing and blurring as they pass
+  const cv = $('pp-fx'), cx = cv.getContext('2d'); let notes = [], run = false;
+  const size = () => { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; };
+  addEventListener('resize', size); size();
+  function draw(n, s) {   // an eighth note (or two beamed) with angry eyebrows, glowing eyes, a jagged grin and a flag like a row of teeth
+    const C = n.col; cx.save(); cx.scale(s, s); cx.shadowColor = C; cx.shadowBlur = 18;
+    const head = x => {
+      cx.fillStyle = '#12020a'; cx.strokeStyle = C; cx.lineWidth = 3; cx.beginPath(); cx.ellipse(x, 0, 15, 11, -.35, 0, 7); cx.fill(); cx.stroke();
+      cx.strokeStyle = '#fff'; cx.lineWidth = 2.4; cx.beginPath(); cx.moveTo(x - 9, -6); cx.lineTo(x - 2, -2); cx.moveTo(x + 9, -7); cx.lineTo(x + 2, -2.5); cx.stroke();
+      cx.fillStyle = '#ffe14d'; cx.beginPath(); cx.arc(x - 5, 1.5, 2.3, 0, 7); cx.arc(x + 5, 1, 2.3, 0, 7); cx.fill();
+      cx.strokeStyle = C; cx.lineWidth = 1.6; cx.beginPath(); cx.moveTo(x - 6, 6); for (let i = 0; i < 4; i++) cx.lineTo(x - 6 + i * 3 + 1.5, i % 2 ? 6 : 8.5); cx.lineTo(x + 6, 6); cx.stroke();
+      cx.lineWidth = 3; cx.beginPath(); cx.moveTo(x + 13, -3); cx.lineTo(x + 13, -46); cx.stroke();
+    };
+    head(0); cx.fillStyle = C;
+    if (n.two) { head(34); cx.beginPath(); cx.moveTo(13, -46); cx.lineTo(47, -52); cx.lineTo(47, -44); cx.lineTo(13, -38); cx.fill(); }
+    else { cx.beginPath(); cx.moveTo(13, -46); cx.lineTo(30, -36); cx.lineTo(22, -33); cx.lineTo(33, -24); cx.lineTo(24, -22); cx.lineTo(30, -12); cx.lineTo(13, -26); cx.fill(); }
+    cx.restore();
+  }
+  function frame(now) {
+    const t = now / 1000, W = cv.width, H = cv.height, d = devicePixelRatio; cx.clearRect(0, 0, W, H);
+    notes = notes.filter(n => t - n.t0 < n.life);
+    notes.forEach(n => {
+      if (t < n.t0) return; const k = (t - n.t0) / n.life, z = Math.pow(k, 2.2), x = W / 2 + n.dx * W * z * 1.4, y = H * .45 + n.dy * H * z * 1.4, s = (.25 + z * 5) * d;
+      n.trail.push([x, y]); if (n.trail.length > 10) n.trail.shift();
+      cx.strokeStyle = n.col; cx.globalAlpha = .35 * (1 - k); cx.lineWidth = 4 * s / d; cx.beginPath(); n.trail.forEach(([a, b], i) => i ? cx.lineTo(a, b) : cx.moveTo(a, b)); cx.stroke();
+      cx.globalAlpha = Math.min(1, k * 5) * (k > .82 ? (1 - k) / .18 : 1);
+      cx.save(); cx.translate(x, y); cx.rotate(n.rot + n.spin * k); if (k > .7) cx.filter = `blur(${(k - .7) * 14}px)`; draw(n, s); cx.restore(); cx.globalAlpha = 1;
+    });
+    if (notes.length || run) requestAnimationFrame(frame); else cx.clearRect(0, 0, W, H);
+  }
+  return {
+    go(count, secs) {
+      if (reduceMotion) return; const t = performance.now() / 1000;
+      for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2, sp = .25 + Math.random() * .35;
+        notes.push({ t0: t + i * (secs / count) + Math.random() * .1, life: 1.1 + Math.random() * .5, dx: Math.cos(a) * sp, dy: Math.sin(a) * sp * .8, rot: (Math.random() - .5) * 1.2, spin: (Math.random() - .5) * 3, col: Math.random() < .6 ? '#ff2d55' : '#9b30ff', two: Math.random() < .4, trail: [] }); }
+      if (!run) { run = true; requestAnimationFrame(frame); } setTimeout(() => { run = false; }, (secs + 1.8) * 1000);
+    },
+    stop() { notes = []; run = false; cx.clearRect(0, 0, cv.width, cv.height); },
+  };
+})();
+function ppDistract(tok) {   // resolves after about 3 seconds; returns 0 so the question note plays right after
+  return new Promise(done => {
+    const kinds = ppSounds().map(x => x.key), g = $('game'), w = $('pp-dword');
+    let t = 0; while (t < 2.3) { const base = 36 + rand(50), k = kinds[rand(kinds.length)], n = 1 + rand(3); for (let j = 0; j < n; j++) ppNote(base + j * (1 + rand(2)), t, .18 + Math.random() * .25, k, 60 + rand(40)); t += .08 + Math.random() * .14; }
+    ppSlide(40 + rand(30), 40 + rand(30), .4, .9); ppSlide(60 + rand(20), 45 + rand(20), 1.4, .8); ppWash(2.25, .75);
+    cCenter('!', 'Distractors!', '#ff2d55'); $('ask').innerHTML = '<b style="color:#ff2d55">Distractors!</b> Hold on to nothing…';
+    g.classList.add('pp-evil'); if (!reduceMotion) g.classList.add('pp-shake'); w.classList.add('on'); PPFX.go(9, 2.4); CNET.flicker('#ff2d55'); Web.bad();
+    const end = () => { g.classList.remove('pp-shake', 'pp-evil'); w.classList.remove('on'); };
+    setTimeout(() => g.classList.remove('pp-shake'), 2300);
+    setTimeout(() => w.classList.remove('on'), 2500);
+    setTimeout(() => { end(); if (S.tok === tok) { cCenter('?', 'Listen'); $('ask').innerHTML = 'Mind cleared. Listen…'; } done(0); }, 3200);
+  });
+}
 function ppScramble() { for (let i = 0; i < 7; i++) ppNote(48 + rand(36), i * .07, .12, 'epiano', 50); return 750; }
 
 /* the piano: one octave, C to C */
@@ -3570,7 +3648,7 @@ async function ppRound() {
   $('pr-tools').hidden = false; $('b-cnext').hidden = true; $('b-again').hidden = !S.cur.again; $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (1 left)';
   cCenter('?', 'Listen'); $('ask').className = 'ask c-ask'; $('ask').innerHTML = 'Listen…';
   await ppLoad(k, lv.any ? 48 : 60, lv.any ? 83 : 72); if (S.tok !== tok) return;
-  const wait = S.rounds > 0 ? ppScramble() : 0;
+  const wait = S.rounds > 0 ? (lv.ultimate ? await ppDistract(tok) : ppScramble()) : 0; if (S.tok !== tok) return;
   setTimeout(() => {
     if (S.tok !== tok) return;
     ppNote(m, 0, 1.3, k); CNET.fire(3); S.cur.t0 = performance.now(); S.phase = 'answer';
