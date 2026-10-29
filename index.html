@@ -2330,10 +2330,19 @@ async function postRun() {
     const { fs, db } = await fb(), dev = await devPost(displayName(p));
     const data = { name: dev ? DEV_NAME : displayName(p), score: r.score, rounds: r.rounds, floor: r.floor, acc: r.acc, streak: r.streak, created_at: fs.serverTimestamp() };
     if (gid() === 'synapse') data.tight = Math.max(10, Math.round((r.tight || 3) * 10));
-    if (p.classCode) data.class_code = p.classCode;
     if (iconOf(p)) data.icon = iconOf(p);
-    if (dev) data.dev = true;
-    postedId = (await wait(fs.addDoc(fs.collection(db, scoresCol()), data))).id;
+    if (dev) {   // the developer's runs stay in the old top level collection
+      data.dev = true; if (p.classCode) data.class_code = p.classCode;
+      postedId = (await wait(fs.addDoc(fs.collection(db, scoresCol()), data))).id;
+    } else {   // one batch: a copy in each class + the World copy
+      const codes = [...new Set(classesOf(p).map(c => c.code))], b = fs.writeBatch(db), refs = codes.map(code => fs.doc(classCol(fs, db, code))), wref = fs.doc(worldCol(fs, db));
+      refs.forEach((ref, i) => b.set(ref, { ...data, class_code: codes[i] }));
+      const w = { nick: myNick(), level: String(data.floor), score: Math.min(data.score, 1000000), acc: data.acc, created_at: data.created_at };
+      if (data.icon) w.icon = data.icon;
+      b.set(wref, w);
+      await wait(b.commit());
+      postedId = refs.length ? refs[0].id : wref.id;
+    }
     boardCache.clear();
     m.className = 'postmsg ok'; m.textContent = `Posted${p.classCode ? ' to ' + classNames(p) + ' and the World board' : ' to the World board'}.`;
   } catch (e) {
@@ -2345,14 +2354,22 @@ async function postRun() {
 /* ---------- leaderboard ---------- */
 let boardScope = 'world', boardTok = 0; const boardCache = new Map();
 const toRow = d => ({ ...d.data(), id: d.id });
+// PRIVACY (2026-10-29): a score with a name is saved inside its class (classes/<code>/<area>_scores), so reading it needs the code.
+// The World board reads world_scores/brainwaves_<area>/runs: the student's first name and last initial, the score, accuracy,
+// icon and the level reached (as text in level). The developer's runs (Maestro) stay in the old top level collections.
+function myNick() { try { const p = JSON.parse(localStorage.getItem('rdt_profile_v1') || 'null'); return p && p.first && p.init ? `${p.first.charAt(0).toUpperCase()}${p.first.slice(1)} ${p.init}.` : ''; } catch (e) { return ''; } }
+const classCol = (fs, db, code) => fs.collection(db, 'classes', code, scoresCol());
+const worldCol = (fs, db) => fs.collection(db, 'world_scores', 'brainwaves_' + gid(), 'runs');
+const worldRow = d => { const r = d.data(); return { id: d.id, world: true, name: r.nick, icon: r.icon || '', score: r.score, acc: r.acc, floor: r.level }; };
 async function fetchBoard(scope) {
   const hit = boardCache.get(gid() + scope); if (hit && Date.now() - hit.t < 60000) return hit.rows;
-  const { fs, db } = await fb(), col = fs.collection(db, scoresCol()); let rows;
-  if (scope === 'world') rows = (await wait(fs.getDocs(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(toRow);
+  const { fs, db } = await fb(); let rows;
+  if (scope === 'world') rows = (await wait(fs.getDocs(fs.query(worldCol(fs, db), fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(worldRow);
   else {
-    try { rows = (await wait(fs.getDocs(fs.query(col, fs.where('class_code', '==', scope), fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(toRow); }
-    catch (e) { if (e.code !== 'failed-precondition') throw e; rows = (await wait(fs.getDocs(fs.query(col, fs.where('class_code', '==', scope))))).docs.map(toRow).sort((a, b) => b.score - a.score).slice(0, 30); }
-    try { const seen = new Set(rows.map(r => r.id)); (await wait(fs.getDocs(fs.query(col, fs.where('dev', '==', true))))).docs.map(toRow).forEach(r => { if (!seen.has(r.id)) rows.push(r); }); rows.sort((a, b) => b.score - a.score); rows = rows.slice(0, 30); } catch {}
+    const col = classCol(fs, db, scope);
+    try { rows = (await wait(fs.getDocs(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(toRow); }
+    catch (e) { if (e.code !== 'failed-precondition') throw e; rows = (await wait(fs.getDocs(col))).docs.map(toRow).sort((a, b) => b.score - a.score).slice(0, 30); }
+    try { const seen = new Set(rows.map(r => r.id)); (await wait(fs.getDocs(fs.query(fs.collection(db, scoresCol()), fs.where('dev', '==', true))))).docs.map(toRow).forEach(r => { if (!seen.has(r.id)) rows.push(r); }); rows.sort((a, b) => b.score - a.score); rows = rows.slice(0, 30); } catch {}   // the developer's runs show on every class board
   }
   boardCache.set(gid() + scope, { rows, t: Date.now() }); return rows;
 }
