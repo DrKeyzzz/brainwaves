@@ -2342,8 +2342,12 @@ async function postRun() {
       b.set(wref, w);
       await wait(b.commit());
       postedId = refs.length ? refs[0].id : wref.id;
+      // put the new run into any cached board, so it shows right away without reading the board again
+      const add = (key, row) => { const c = boardCache.get(key); if (c) { c.rows.push(row); c.rows.sort((x, y) => y.score - x.score); } };
+      add(gid() + 'world', { id: wref.id, world: true, name: w.nick, icon: w.icon || '', score: w.score, acc: w.acc, floor: w.level });
+      refs.forEach((ref, i) => add(gid() + codes[i], { ...data, class_code: codes[i], id: ref.id }));
     }
-    boardCache.clear();
+    if (dev) boardCache.clear();
     m.className = 'postmsg ok'; m.textContent = `Posted${p.classCode ? ' to ' + classNames(p) + ' and the World board' : ' to the World board'}.`;
   } catch (e) {
     m.className = 'postmsg err'; m.textContent = (e && e.code === 'permission-denied' ? "That isn't allowed. Ask your teacher." : "Couldn't post your score. Check your internet connection.") + ' Your score is saved on this device.';
@@ -2362,14 +2366,14 @@ const classCol = (fs, db, code) => fs.collection(db, 'classes', code, scoresCol(
 const worldCol = (fs, db) => fs.collection(db, 'world_scores', 'brainwaves_' + gid(), 'runs');
 const worldRow = d => { const r = d.data(); return { id: d.id, world: true, name: r.nick, icon: r.icon || '', score: r.score, acc: r.acc, floor: r.level }; };
 async function fetchBoard(scope) {
-  const hit = boardCache.get(gid() + scope); if (hit && Date.now() - hit.t < 60000) return hit.rows;
+  const hit = boardCache.get(gid() + scope); if (hit && Date.now() - hit.t < 600000) return hit.rows;   // kept 10 min
   const { fs, db } = await fb(); let rows;
   if (scope === 'world') rows = (await wait(fs.getDocs(fs.query(worldCol(fs, db), fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(worldRow);
   else {
     const col = classCol(fs, db, scope);
     try { rows = (await wait(fs.getDocs(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(30))))).docs.map(toRow); }
     catch (e) { if (e.code !== 'failed-precondition') throw e; rows = (await wait(fs.getDocs(col))).docs.map(toRow).sort((a, b) => b.score - a.score).slice(0, 30); }
-    try { const seen = new Set(rows.map(r => r.id)); (await wait(fs.getDocs(fs.query(fs.collection(db, scoresCol()), fs.where('dev', '==', true))))).docs.map(toRow).forEach(r => { if (!seen.has(r.id)) rows.push(r); }); rows.sort((a, b) => b.score - a.score); rows = rows.slice(0, 30); } catch {}   // the developer's runs show on every class board
+    try { const seen = new Set(rows.map(r => r.id)); (await wait(fs.getDocs(fs.query(fs.collection(db, scoresCol()), fs.where('dev', '==', true), fs.limit(10))))).docs.map(toRow).forEach(r => { if (!seen.has(r.id)) rows.push(r); }); rows.sort((a, b) => b.score - a.score); rows = rows.slice(0, 30); } catch {}   // the developer's runs show on every class board
   }
   boardCache.set(gid() + scope, { rows, t: Date.now() }); return rows;
 }
