@@ -1509,7 +1509,7 @@ const PPLV = [
   { name: 'The triad',        sub: 'C, E or G',                      lab: '', mult: 1.2, color: '#ffb35c', tag: 'Three notes',           notes: [0, 4, 7] },
   { name: 'Five friends',     sub: 'C, D, E, G, A',                  lab: '', mult: 1.4, color: '#f4e063', tag: 'The pentatonic five',   notes: [0, 2, 4, 7, 9] },
   { name: 'White keys',       sub: 'All seven white keys',           lab: '', mult: 1.6, color: '#7be36a', tag: 'C to B',                notes: [0, 2, 4, 5, 7, 9, 11] },
-  { name: 'First black keys', sub: 'White keys plus F# and Bb',      lab: '', mult: 1.8, color: '#48c9f0', tag: 'No replays from here',  notes: [0, 2, 4, 5, 6, 7, 9, 10, 11] },
+  { name: 'First black keys', sub: 'White keys plus F# and Bb',      lab: '', mult: 1.8, color: '#48c9f0', tag: 'Two black keys join',  notes: [0, 2, 4, 5, 6, 7, 9, 10, 11] },
   { name: 'All twelve',       sub: 'Every note',                     lab: '', mult: 2.0, color: '#7aa2ff', tag: 'The whole octave',      notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
   { name: 'Anywhere',         sub: 'Every note, any octave',         lab: '', mult: 2.3, color: '#b58cff', tag: 'High or low',           notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true },
   { name: 'Any sound',        sub: 'Any octave, any instrument',     lab: '', mult: 2.6, color: '#d8ecff', tag: 'True perfect pitch',    notes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], any: true, mix: true },
@@ -3531,7 +3531,7 @@ const PP_COL = Array.from({ length: 12 }, (_, i) => {   // a color wheel, one hu
 });
 const PP_KEYS = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12 };
 const ppStore = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
-const PP = { oct: 0, colors: ppStore('pp_cols_v1') !== '0', heard: 0, sound: ppStore('pp_sound_v1') || 'piano', out: null, ctx: null };
+const PP = { recent: [], oct: 0, colors: ppStore('pp_cols_v1') !== '0', heard: 0, sound: ppStore('pp_sound_v1') || 'piano', out: null, ctx: null };
 const ppSounds = () => [...MTGSound.list(), { key: 'sine', name: 'Pure tone' }];
 if (!ppSounds().some(x => x.key === PP.sound)) PP.sound = 'piano';
 const ppCol = pc => PP.colors ? PP_COL[pc] : '#d8ecff';
@@ -3660,11 +3660,13 @@ async function ppRound() {
   $('btns').hidden = true; $('iansw').hidden = true; $('barw').style.visibility = 'hidden'; $('result').hidden = true; $('pp').hidden = false;
   if (S.mode === 'practice') return ppFree();
   S.phase = 'listen'; ppClear(); ppBar(false);
-  const fl = Math.min(S.floor, PPLV.length - 1), lv = PPLV[fl], recent = S.cRecent || [];
-  let pc; do pc = lv.notes[rand(lv.notes.length)]; while (recent.length >= 2 && recent.every(r => r === pc) && lv.notes.length > 1);   // never the same note three times running
-  S.cRecent = [...recent.slice(-1), pc];
+  const fl = Math.min(S.floor, PPLV.length - 1), lv = PPLV[fl], recent = PP.recent;
+  // no repeats: with 5 or more notes, none of the last 3 comes back; with 2 to 4, never the same note three times running
+  const avoid = lv.notes.length >= 5 ? recent.slice(-3) : recent.length >= 2 && recent[recent.length - 1] === recent[recent.length - 2] ? [recent[recent.length - 1]] : [];
+  const pool = lv.notes.filter(n => !avoid.includes(n)), pc = (pool.length ? pool : lv.notes)[rand((pool.length ? pool : lv.notes).length)];
+  PP.recent = [...recent.slice(-3), pc];
   const m = lv.any ? 48 + pc + 12 * rand(3) : 60 + pc, all = ppSounds(), k = lv.mix ? all[rand(all.length)].key : PP.sound;
-  S.cur = { pc, m, k, again: fl < 4 ? 1 : 0, t0: 0 };
+  S.cur = { pc, m, k, again: lv.ultimate ? 0 : 1, t0: 0 };
   document.querySelectorAll('#pp-piano .pk').forEach(x => x.classList.toggle('off', !lv.notes.includes(+x.dataset.s % 12)));
   $('pr-tools').hidden = false; $('b-cnext').hidden = true; $('b-again').hidden = !S.cur.again; $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (1 left)';
   cCenter('?', 'Listen'); $('ask').className = 'ask c-ask'; $('ask').innerHTML = 'Listen…';
