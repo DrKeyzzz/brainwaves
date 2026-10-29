@@ -1401,7 +1401,7 @@ const REGION_INFO = {
   progressions: { skill: 'Chord progressions', about: 'Four chords play. The first is home (I). Drag a chord onto each of the other three cards, compare yours with the question, then press Submit. I, IV, V, vi and more, in major and minor keys.', facts: ['6 levels', 'Every key', '3 lives'] },
   scales: { skill: 'Scales and modes', about: 'A scale plays up and back down. Name it, from major and minor to all seven modes, pentatonics, blues, whole tone and diminished.', facts: ['8 levels', '14 scales', 'Every key'] },
   voice: { skill: 'Singing in tune', about: 'Hear it, then sing it. First you sing back a single note. Later a chord plays and the screen shows which note is yours (top, middle or bottom). Hold the mic button and hold that note steady until it locks in.', facts: ['9 levels', 'Uses your microphone', 'Headphones help'] },
-  pitch: { skill: 'Perfect pitch', about: 'Name a note with no starting note. Practice on the piano: every key plays its note once, in its own color. Then take the test: one note plays, which one was it? Start with C and G and work up to all twelve, in any octave, on any instrument. Level 9 sends in the Distractors, so no note can help you find the next one.', facts: ['9 levels', '7 questions a level', 'Level 9: the Distractors'] },
+  pitch: { skill: 'Perfect pitch', about: 'Name a note with no starting note. Practice any level with no lives, or use the free piano: every key plays its note once, in its own color. Then take the test: one note plays, which one was it? Start with C and G and work up to all twelve, in any octave, on any instrument. Level 9 sends in the Distractors, so no note can help you find the next one.', facts: ['9 levels', '7 questions a level', 'Level 9: the Distractors'] },
   tuner: { skill: 'Tuning by ear', about: 'Pick an instrument off the wall. Every string starts out of tune. Practice with the Visual tuner, or Test yourself by ear and earn up to 3 stars per string.', facts: ['6 instruments', 'Visual or by ear', 'Earn stars'] },
 };
 const FLOORS = [
@@ -1948,8 +1948,10 @@ function drawHome() {
 }
 function drawPick() {
   const I = isI(), C = isC(), P = isP();
-  $('pr-floors').innerHTML = LV().map((f, i) => `<button type="button" data-f="${i}" style="--fc:${f.color}" aria-pressed="${i === S.practiceFloor}">${i + 1}. ${f.name} · ${f.sub}</button>`).join('');
-  $('pick-sub').textContent = P ? 'No lives. Hear it again as often as you like, and see the answer right away.' : C ? 'No lives. Hear the chord as often as you like, and see the answer right away.' : isV() ? 'No lives, no timer, as many hints as you like, and a piano to help.' : I ? 'No lives. Hear the notes again as often as you like, and see the answer right away.' : 'No lives, no timer. You can hear the notes again, and you see the answer right away.';
+  const fp = isPP() && PP.free;   // Perfect Pitch: Free piano (every key plays its note) or any level's questions
+  $('pr-floors').innerHTML = (isPP() ? `<button type="button" data-f="free" style="--fc:#d8ecff" aria-pressed="${fp}">Free piano · Learn the notes</button>` : '')
+    + LV().map((f, i) => `<button type="button" data-f="${i}" style="--fc:${f.color}" aria-pressed="${!fp && i === S.practiceFloor}">${i + 1}. ${f.name} · ${f.sub}</button>`).join('');
+  $('pick-sub').textContent = isPP() ? 'Any level, no lives. Hear the note again as often as you like, and see the answer right away. Free piano: tap keys to learn the notes.' : P ? 'No lives. Hear it again as often as you like, and see the answer right away.' : C ? 'No lives. Hear the chord as often as you like, and see the answer right away.' : isV() ? 'No lives, no timer, as many hints as you like, and a piano to help.' : I ? 'No lives. Hear the notes again as often as you like, and see the answer right away.' : 'No lives, no timer. You can hear the notes again, and you see the answer right away.';
   $('adv').hidden = !I && !C && !P; ['adv-iv', 'adv-dir', 'adv-h1', 'adv-h2'].forEach(id => { $(id).hidden = false; }); if (!I && !C && !P) return;
   if (P) {
     const SC2 = isSc(); $('adv-h1').textContent = SC2 ? 'Scales and modes (pick at least 2)' : ''; $('adv-h2').textContent = SC2 ? '' : 'Chords that can appear (pick at least 3)'; $('adv-h3').textContent = 'Key';
@@ -2698,11 +2700,11 @@ addEventListener('keydown', e => {
 
 /* ---------- wiring ---------- */
 $('go-run').onclick = () => { S.startFloor = S.sel; startRun(); };
-$('go-practice').onclick = () => { S.practiceFloor = S.sel; if (isPP()) { startPractice(); return; } show('pick'); drawPick(); };
+$('go-practice').onclick = () => { S.practiceFloor = S.sel; if (isPP()) PP.free = false; show('pick'); drawPick(); };
 $('lad-back').onclick = goHome;
 $('lad-svg').addEventListener('click', e => { const g = e.target.closest('.nd'); if (!g) return; S.sel = +g.dataset.i; drawLadder(); selUI(); });
 $('lad-svg').addEventListener('keydown', e => { const g = e.target.closest('.nd'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); S.sel = +g.dataset.i; drawLadder(); selUI(); } });
-$('pr-floors').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; S.practiceFloor = +b.dataset.f; Web.accent(LV()[S.practiceFloor].color); drawPick(); });
+$('pr-floors').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (!b) return; if (b.dataset.f === 'free') { PP.free = true; drawPick(); return; } PP.free = false; S.practiceFloor = +b.dataset.f; Web.accent(LV()[S.practiceFloor].color); drawPick(); });
 $('pr-start').onclick = startPractice;
 $('pr-back').onclick = backToLadder;
 $('lb-btn').onclick = openBoard; $('e-board').onclick = openBoard; $('board-back').onclick = () => { if (S.mode === 'ladder') showLadder(); else if (S.mode === 'home' || !lastRun) goHome(); else show('end'); };
@@ -3530,7 +3532,7 @@ const PP_COL = Array.from({ length: 12 }, (_, i) => {   // a color wheel, one hu
 });
 const PP_KEYS = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12 };
 const ppStore = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
-const PP = { recent: [], oct: 0, colors: ppStore('pp_cols_v1') !== '0', heard: 0, sound: ppStore('pp_sound_v1') || 'piano', out: null, ctx: null };
+const PP = { recent: [], free: false, oct: 0, colors: ppStore('pp_cols_v1') !== '0', heard: 0, sound: ppStore('pp_sound_v1') || 'piano', out: null, ctx: null };
 const ppSounds = () => [...MTGSound.list(), { key: 'sine', name: 'Pure tone' }];
 if (!ppSounds().some(x => x.key === PP.sound)) PP.sound = 'piano';
 const ppCol = pc => PP.colors ? PP_COL[pc] : '#d8ecff';
@@ -3657,7 +3659,7 @@ async function ppRound() {
   S.tok++; const tok = S.tok;
   setFloorUI(); hudUI();
   $('btns').hidden = true; $('iansw').hidden = true; $('barw').style.visibility = 'hidden'; $('result').hidden = true; $('pp').hidden = false;
-  if (S.mode === 'practice') return ppFree();
+  if (S.mode === 'practice' && PP.free) return ppFree();
   S.phase = 'listen'; ppClear(); ppBar(false);
   const fl = Math.min(S.floor, PPLV.length - 1), lv = PPLV[fl], recent = PP.recent;
   // no repeats: with 5 or more notes, none of the last 3 comes back; with 2 to 4, never the same note three times running
@@ -3665,9 +3667,9 @@ async function ppRound() {
   const pool = lv.notes.filter(n => !avoid.includes(n)), pc = (pool.length ? pool : lv.notes)[rand((pool.length ? pool : lv.notes).length)];
   PP.recent = [...recent.slice(-3), pc];
   const m = lv.any ? 48 + pc + 12 * rand(3) : 60 + pc, all = ppSounds(), k = lv.mix ? all[rand(all.length)].key : PP.sound;
-  S.cur = { pc, m, k, again: lv.ultimate ? 0 : 1, t0: 0 };
+  S.cur = { pc, m, k, again: S.mode === 'practice' ? 99 : lv.ultimate ? 0 : 1, t0: 0 };   // practice: hear it as often as you like
   document.querySelectorAll('#pp-piano .pk').forEach(x => x.classList.toggle('off', !lv.notes.includes(+x.dataset.s % 12)));
-  $('pr-tools').hidden = false; $('b-cnext').hidden = true; $('b-again').hidden = !S.cur.again; $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (1 left)';
+  $('pr-tools').hidden = false; $('b-cnext').hidden = true; $('b-again').hidden = !S.cur.again; $('b-again').disabled = true; $('b-again').textContent = S.mode === 'practice' ? '🔁 Hear it again' : '🔁 Hear again (1 left)';
   cCenter('?', 'Listen'); $('ask').className = 'ask c-ask'; $('ask').innerHTML = 'Listen…';
   await ppLoad(k, lv.any ? 48 : 60, lv.any ? 83 : 72); if (S.tok !== tok) return;
   const wait = S.rounds > 0 ? (lv.ultimate ? await ppDistract(tok) : ppScramble()) : 0; if (S.tok !== tok) return;
@@ -3679,8 +3681,8 @@ async function ppRound() {
   }, wait);
 }
 function ppReplay() {
-  const c = S.cur; if (S.mode === 'practice' || !c || S.phase !== 'answer' || !c.again) return;
-  c.again--; ppNote(c.m, 0, 1.3, c.k); CNET.fire(2); $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (0 left)';
+  const c = S.cur; if (!c || S.phase !== 'answer' || !c.again) return;
+  c.again--; ppNote(c.m, 0, 1.3, c.k); CNET.fire(2); if (!c.again) { $('b-again').disabled = true; $('b-again').textContent = '🔁 Hear again (0 left)'; }
 }
 function ppAnswer(pc) {
   if (S.phase !== 'answer') return;
