@@ -322,11 +322,17 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 .banner b{display:block;font-size:clamp(34px,9vw,72px);font-weight:800;letter-spacing:-.02em;margin-top:8px;text-shadow:0 0 40px #000}
 .banner small{display:block;margin-top:8px;color:var(--mut);font-size:15px}
 #home{justify-content:flex-end;align-items:center;padding-bottom:22px;pointer-events:none}
-#home .card{width:min(520px,100%);background:#0b1226cc;padding:16px 22px;pointer-events:auto;text-align:center}
-#home h1{font-size:40px;margin:2px 0 4px}
+#home .card{width:min(760px,100%);background:#0b1226cc;padding:14px 20px;pointer-events:auto;text-align:center}
+/* the game buttons under the brain: the clear way in (each lights up its part of the brain on hover) */
+.hgames{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 8px}
+.hgames button{display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:99px;border:1.5px solid color-mix(in srgb,var(--gc) 70%,transparent);background:color-mix(in srgb,var(--gc) 14%,#0b1226);color:#fff;font-weight:800;font-size:14px;cursor:pointer;transition:transform .12s,box-shadow .12s,background .12s}
+.hgames button i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--gc);color:#06101e;font-size:12px;flex:none}
+.hgames button:hover,.hgames button:focus-visible{background:color-mix(in srgb,var(--gc) 32%,#0b1226);box-shadow:0 0 0 2px var(--gc),0 0 22px var(--gc);transform:translateY(-2px);outline:none}
+.hgames button span::after{content:' ▶';font-size:10px;opacity:.7}
+#home h1{font-size:34px;margin:0 0 2px}
 #home .sub{margin:0 0 6px}
 #home .best{margin:0;font-size:13px}
-@media (max-width:859px){#home .card{padding:14px}#home h1{font-size:30px}#home .sub{display:none}}
+@media (max-width:859px){#home .card{padding:12px}#home h1{font-size:26px}#home .sub{display:none}.hgames{gap:6px;margin:6px 0}.hgames button{font-size:13px;padding:6px 10px 6px 6px}}
 #ladder{flex-direction:row;align-items:stretch;justify-content:center;gap:18px;padding:64px 16px 16px}
 #ladder .lad-panel{width:min(340px,100%);align-self:center;flex:none;transition:opacity .3s}
 #ladder.trans .lad-panel{opacity:0;pointer-events:none}
@@ -511,9 +517,10 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 .pk.right{box-shadow:0 0 0 3px #fff,0 0 34px var(--nc)}
 .pk.wrong{background:linear-gradient(#4a1626,#200810);color:#ff8090;box-shadow:inset 0 0 0 3px var(--bad),0 0 20px #ff5a6e66}
 .pk.right::before,.pk.wrong::before{position:absolute;top:8px;font-size:18px;font-weight:800}.pk.right::before{content:'✓';color:#06101f}.pk.wrong::before{content:'✗';color:var(--bad)}
-#pp:not([hidden]) ~ #pr-tools .btn{flex:0 1 260px}
+#pp #pr-tools{margin:0;flex:0 0 auto;gap:8px}#pp #pr-tools .btn{flex:0 0 auto}#pp #b-cnext{background:#d8ecff;color:#06101f;border-color:#d8ecff;box-shadow:0 0 16px #d8ecff88;font-weight:800}
+#game.ppg .cnet{height:clamp(70px,20vh,240px)}#game.ppg .pp-piano{height:clamp(90px,26vh,200px)}#game.ppg .ask{margin-bottom:6px}
 .pk.off{filter:brightness(.32) saturate(.3);pointer-events:none}
-@media (max-width:520px){.pk kbd{display:none}}
+@media (max-width:520px){.pk kbd{display:none}#pp #pr-tools{flex-basis:100%;justify-content:center}}   /* phones: the buttons always get their own line, so the piano never jumps */
 /* Perfect Pitch level 9: the Distractors (evil notes fly at you, the word flashes, the screen shakes) */
 #pp-fx{position:fixed;inset:0;width:100%;height:100%;z-index:30;pointer-events:none}
 #pp-dword{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);z-index:31;pointer-events:none;font:900 clamp(30px,9vw,92px) Orbitron,Inter,sans-serif;letter-spacing:.08em;color:#ff2d55;opacity:0;white-space:nowrap;transition:opacity .4s}
@@ -702,7 +709,8 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
   <div class="card">
     <span class="eyebrow">Ear training</span>
     <h1>Brainwaves</h1>
-    <p class="sub">Every part of the brain trains a different skill. Pick a part to zoom in.</p>
+    <p class="sub">Every part of the brain trains a different skill. <b>Pick a game to start.</b></p>
+    <div class="hgames" id="hgames" role="group" aria-label="Choose a game"></div>
     <p class="best" id="best"></p>
   </div>
 </section>
@@ -1671,7 +1679,7 @@ const Web = (() => {
   const pos = (n, t) => reduceMotion ? [n.x, n.y] : [n.x + Math.sin(t * n.sp + n.ph) * n.amp, n.y + Math.cos(t * n.sp * .8 + n.ph) * n.amp];
   const curve = (p, q, e, s) => { const mx = (p[0] + q[0]) / 2 + e.ox, my = (p[1] + q[1]) / 2 + e.oy, k = 1 - s; return [k * k * p[0] + 2 * k * s * mx + s * s * q[0], k * k * p[1] + 2 * k * s * my + s * s * q[1]]; };
   // where the whole brain sits when it is on screen (beside the cards on a wide screen, above them on a phone)
-  function layout() { const wide = W >= 860, bot = wide ? 172 : 210, avail = Math.max(200, H - 64 - bot); const size = Math.max(110, wide ? Math.min((W / 2 - 135) / 1.1, avail / 1.78) : Math.min((W / 2 - 20) / 1.0, avail / 1.65)); return { cx: W / 2, cy: 64 + avail / 2 - size * 0.12, size }; }
+  function layout() { const card = document.querySelector('#home .card'), ch = card && card.offsetHeight ? card.offsetHeight + 36 : 0, wide = W >= 860, bot = Math.max(wide ? 172 : 210, ch), avail = Math.max(200, H - 64 - bot); const size = Math.max(110, wide ? Math.min((W / 2 - 135) / 1.1, avail / 1.78) : Math.min((W / 2 - 20) / 1.0, avail / 1.65)); return { cx: W / 2, cy: 64 + avail / 2 - size * 0.12, size }; }
 
   function drawMicro(ms, t, alpha, scale) {
     cx.save(); cx.globalAlpha = alpha; cx.translate(W / 2, H / 2); cx.scale(scale, scale); cx.translate(-W / 2, -H / 2);
@@ -1738,9 +1746,10 @@ const Web = (() => {
         const lyc = ly + (A[2] === 'c' ? (A[1] > 0 ? 18 : -18) : 0); lastLab[i] = [lx, lyc, wide, A[2]]; cx.globalAlpha = alpha * la * (on ? 1 : .75); cx.strokeStyle = f.color; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(px, py); cx.lineTo(lx, ly); cx.stroke();
         cx.fillStyle = f.color; cx.beginPath(); cx.arc(px, py, 3.6, 0, 6.28); cx.fill();
         if (wide) {   // each game's name in a dark box that glows in the game's color (brighter on hover)
-          const label = `${f.short}${f.ready ? '' : ' · soon'}`, tw = cx.measureText(label).width, bw = tw + 28, bh = 32, bx = A[2] === 'l' ? lx + 4 : A[2] === 'r' ? lx - 4 - bw : lx - bw / 2, by = lyc - bh / 2;
+          const label = `${f.short}${f.ready ? '' : ' · soon'}  ▶`, tw = cx.measureText(label).width, bw = tw + 28, bh = 32, bx = A[2] === 'l' ? lx + 4 : A[2] === 'r' ? lx - 4 - bw : lx - bw / 2, by = lyc - bh / 2;
           lastLab[i].push(bx, bw);
-          cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 26 : 14; cx.fillStyle = 'rgba(3,6,12,.86)'; cx.beginPath(); cx.roundRect(bx, by, bw, bh, 10); cx.fill();
+          const breathe = reduceMotion ? 0 : 6 * (1 + Math.sin(performance.now() / 700 - i * .8));   // a slow glow, a little out of step on each label, says 'click me'
+          cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 28 : 10 + breathe; cx.fillStyle = 'rgba(3,6,12,.86)'; cx.beginPath(); cx.roundRect(bx, by, bw, bh, 10); cx.fill();
           cx.lineWidth = on ? 2.5 : 1.8; cx.strokeStyle = f.color; cx.stroke(); cx.restore();
           cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.save(); cx.shadowColor = f.color; cx.shadowBlur = on ? 10 : 4; cx.fillText(label, bx + bw / 2, lyc + 1); cx.restore();
         }
@@ -1945,10 +1954,14 @@ function markDone(i) { const l = progLocal(), g = gid(); if (!l[g][i]) { l[g][i]
 /* ---------- screens ---------- */
 function drawHome() {
   const b = bestRec('synapse'), rdy = REGIONS.map((r, i) => (r.ready ? i : -1)).filter(i => i >= 0);
+  if (!$('hgames').childElementCount) $('hgames').innerHTML = rdy.map(i => `<button type="button" data-r="${i}" style="--gc:${REGIONS[i].color}"><i>${i + 1}</i><span>${REGIONS[i].short}</span></button>`).join('');
   if (S.mode === 'home') Web.lit(rdy, -1);
   $('best').innerHTML = `<b>${rdy.length}</b> of ${REGIONS.length} areas open` + (b.score ? ` · Sharp or Flat? best <b>${b.score.toLocaleString()}</b>` : '');
   drawPick();
 }
+$('hgames').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b && S.mode === 'home' && !S.busy) enterRegion(+b.dataset.r); });
+['pointerover', 'focusin'].forEach(ev => $('hgames').addEventListener(ev, e => { const b = e.target.closest('[data-r]'); Web.hover(b ? +b.dataset.r : -1); }));
+['pointerleave', 'focusout'].forEach(ev => $('hgames').addEventListener(ev, () => Web.hover(-1)));
 function drawPick() {
   const I = isI(), C = isC(), P = isP();
   const fp = isPP() && PP.free;   // Perfect Pitch: Free piano (every key plays its note) or any level's questions
@@ -3267,7 +3280,9 @@ function cAnswer(k) {
 function gameLook() {   // the game screen shows the neuron network for Chord Colors, the two note circles otherwise
   const C = isC(), N = C || isP() || isPP(); $('cnet-wrap').hidden = !N; document.querySelector('#game .notes').hidden = N; $('b-broken').hidden = !C; $('b-cnext').hidden = true; $('c-snd').hidden = !(C || isP()); $('ppath').hidden = !isP(); $('pp').hidden = !isPP(); $('b-again').hidden = false;
   $('ask').className = 'ask'; $('b-again').disabled = false; $('b-pmine').hidden = $('b-psub').hidden = true; $('b-again').textContent = '🔁 Hear it again';
-  $('iansw').classList.toggle('chords', C); S.cRecent = []; $('game').classList.toggle('prog', isP() || isPP());
+  $('iansw').classList.toggle('chords', C); S.cRecent = []; $('game').classList.toggle('prog', isP() || isPP()); $('game').classList.toggle('ppg', isPP());
+  const tools = $('pr-tools');   // Perfect Pitch: Hear again / Next sit in the row above the piano, so they never fall off the bottom of a short screen
+  if (isPP()) document.querySelector('#pp .pp-bar').appendChild(tools); else if (tools.previousElementSibling !== $('result')) $('result').after(tools);
   if (C || isP()) $('c-snd').innerHTML = Object.entries(PAV.snd.SOUNDS).map(([k, v]) => `<option value="${k}"${k === PAV.snd.sound ? ' selected' : ''}>${v.name}</option>`).join('');
 }
 $('b-cnext').onclick = () => next();
