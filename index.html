@@ -2405,8 +2405,16 @@ async function drawBoard() {
   try {
     const rows = await fetchBoard(boardScope); if (tok !== boardTok) return;
     const me = p ? displayName(p) : null;
-    $('lb').innerHTML = rows.length ? rows.map((r, i) => `<li class="${r.name === me ? 'me' : ''}"><span class="rk">${i + 1}</span><span>${iconHTML(r.icon) ? iconHTML(r.icon) + ' ' : ''}${esc(r.name)}${r.dev ? ' <small style="color:var(--acc)">DEV</small>' : ''}</span><span class="fl">Level ${esc(r.floor)}</span><span class="sc2">${Number(r.score).toLocaleString()}</span></li>`).join('') : '<li><span></span><span>No scores yet. Be the first.</span><span></span><span></span></li>';
+    $('lb').innerHTML = rows.length ? rows.map((r, i) => `<li class="${r.name === me ? 'me' : ''}"><span class="rk">${i + 1}</span><span${!r.world && boardScope !== 'world' ? ` data-avc="${esc(r.class_code || boardScope)}" data-avs="${esc(r.sid || r.name || '')}"` : ''}>${iconHTML(r.icon) ? iconHTML(r.icon) + ' ' : ''}${esc(r.name)}${r.dev ? ' <small style="color:var(--acc)">DEV</small>' : ''}</span><span class="fl">Level ${esc(r.floor)}</span><span class="sc2">${Number(r.score).toLocaleString()}</span></li>`).join('') : '<li><span></span><span>No scores yet. Be the first.</span><span></span><span></span></li>';
+    avHeads($('lb'));   // avatar head (2026-11-16): class rows only
   } catch (e) { if (tok === boardTok) $('lb').innerHTML = "<li><span></span><span>Couldn't load the board. Check your internet connection.</span><span></span><span></span></li>"; }
+}
+// avatar head (2026-11-16): a classmate's small head before their name (class rows carry data-avc / data-avs).
+// MTGAvatar is set up near the end of the page, so a board drawn before that waits for DOMContentLoaded; pages without it skip quietly.
+function avHeads(el) {
+  if (!el) return;
+  if (!window.MTGAvatar) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => avHeads(el), { once: true }); return; }
+  el.querySelectorAll('[data-avs]').forEach(n => MTGAvatar.badge(n, n.dataset.avc, n.dataset.avs, 22));
 }
 
 /* ---------- teacher-assigned settings: ?settings=<base64url JSON> { area: a REGIONS id ('' = any area: the whole brain; missing = synapse, as in older tests),
