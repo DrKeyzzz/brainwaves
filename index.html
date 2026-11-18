@@ -528,6 +528,26 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
 #game.pp-shake .stage{animation:ppShake .5s linear infinite}
 @keyframes ppShake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(4px,-4px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(5px,2px)}}
 #game.pp-evil .c-center b{color:#ff2d55;text-shadow:0 0 24px #ff2d55}
+/* "Did you know?": a brain and music fact every time the page opens (his idea, 2026-11-17) */
+.dyk-dim{position:fixed;inset:0;z-index:40;background:radial-gradient(ellipse at 50% 45%,#03060c55,#03060ccc)}
+.dyk{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:41;width:min(440px,calc(100vw - 28px));max-height:calc(100vh - 40px);overflow:auto;
+  background:#0b1226f5;border:1px solid color-mix(in srgb,var(--fc,#7aa2ff) 60%,var(--line));border-radius:22px;padding:18px 20px 16px;color:var(--ink);
+  box-shadow:0 24px 70px #000c,0 0 40px color-mix(in srgb,var(--fc,#7aa2ff) 30%,transparent);backdrop-filter:blur(10px);opacity:0;transition:opacity .35s,transform .35s}
+.dyk.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.dyk-top{display:flex;align-items:center;gap:10px}
+.dyk-brain{font-size:30px;filter:drop-shadow(0 0 10px var(--fc))}
+.dyk h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.dyk-tag{margin-left:auto;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--fc);border:1px solid color-mix(in srgb,var(--fc) 50%,transparent);border-radius:99px;padding:4px 10px;text-align:center}
+.dyk-fact{margin:14px 0 8px;font-size:18px;line-height:1.5;color:#eef4ff}
+.dyk-fact b{color:var(--fc)}
+.dyk-src{font-size:12px;color:var(--mut);font-style:italic}
+.dyk-try{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:var(--gc);background:color-mix(in srgb,var(--gc) 14%,#0b1226);border:1px solid color-mix(in srgb,var(--gc) 55%,transparent);border-radius:99px;padding:6px 12px;cursor:pointer}
+.dyk-try:hover{box-shadow:0 0 16px var(--gc)}
+.dyk-row{display:flex;gap:10px;margin-top:16px;align-items:center}
+.dyk-count{font-size:12px;color:var(--mut)}
+.dyk .dyk-ok{background:var(--fc);color:#06101f;border-color:var(--fc);margin-left:auto}
+.dyk-row #dyk-more{margin-left:auto}.dyk-row #dyk-more + .dyk-ok{margin-left:0}
+@media (max-width:520px){.dyk-fact{font-size:16px}.dyk-tag{font-size:10px;letter-spacing:.08em}}
 .p-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%);padding:12px 18px;border-radius:14px;font:800 22px Inter,sans-serif;color:#fff;background:color-mix(in srgb,var(--c) 40%,#0b1226);border:2px solid var(--c);box-shadow:0 0 24px var(--c)}
 #b-psub:not(:disabled){border-color:var(--ok);box-shadow:0 0 18px #48e0c855}
 .ib.cc.rn{font-size:20px}
@@ -915,6 +935,14 @@ h2{margin:4px 0 8px;font-size:24px;font-weight:800}
   </div>
 </section>
 
+<div class="dyk-dim" id="dyk-dim" hidden></div>
+<div class="dyk" id="dyk" hidden role="dialog" aria-modal="true" aria-labelledby="dyk-h">
+  <div class="dyk-top"><span class="dyk-brain" aria-hidden="true">🧠</span><h2 id="dyk-h">Did you know?</h2><span class="dyk-tag" id="dyk-tag"></span></div>
+  <p class="dyk-fact" id="dyk-fact"></p>
+  <div class="dyk-src" id="dyk-src"></div>
+  <button class="dyk-try" id="dyk-try" type="button" hidden></button>
+  <div class="dyk-row"><span class="dyk-count" id="dyk-count"></span><button class="btn sm" type="button" id="dyk-more">Another fact</button><button class="btn sm dyk-ok" type="button" id="dyk-ok">Got it</button></div>
+</div>
 <div class="modal" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="w-title">
   <form class="mcard" id="w-form" autocomplete="off" novalidate>
     <span class="eyebrow">Welcome</span>
@@ -2685,8 +2713,8 @@ addEventListener('keydown', e => {
 /* ---------- hover and click on the brain (home screen) ---------- */
 (function () {
   const tip = $('tip'); let cur = -1;
-  const onHome = () => S.mode === 'home' && !$('home').hidden && $('pick').hidden && $('welcome').hidden && !S.busy;
-  const skip = e => e.target.closest('.card, header, button, .who-pill, a');
+  const onHome = () => S.mode === 'home' && !$('home').hidden && $('pick').hidden && $('welcome').hidden && $('dyk').hidden && !S.busy;
+  const skip = e => e.target.closest('.card, header, button, .who-pill, a, .dyk, .dyk-dim');
   function clear() { if (cur !== -1) { cur = -1; Web.hover(-1); tip.hidden = true; tip.dataset.at = ''; document.body.style.cursor = ''; } }
   function tipHTML(r) {
     const inf = REGION_INFO[r.id] || {}, lv = { synapse: FLOORS, intervals: ILV, chords: CLV, voice: VLV }[r.id];
@@ -2750,8 +2778,9 @@ function initApp() {
   if (!asg) { const f = (new URLSearchParams(location.search).get('focus') || '').split(' · ')[0], fi = REGIONS.findIndex(r => r.ready && (r.game === f || r.id === f)); if (fi >= 0) { S.region = fi; S.teach = { region: fi, floor: null }; } }   // ?focus=<area name> (or 'Area · skill' from the home page)
   const into = () => { if (S.teach && S.mode === 'home') enterRegion(S.teach.region); };
   drawHome(); pullProg();
-  if (reduceMotion) { Web.setU(1); show('home'); into(); return; }
-  show(null); Web.setU(0, 0); Web.go('macro', { dur: 2.4 }).then(() => { if (S.mode === 'home') { show('home'); into(); } });   // the opening shot: zoom out from the neurons to the whole brain
+  const dyk = () => setTimeout(() => typeof DYK !== 'undefined' && DYK.maybe(), 500);   // the "Did you know?" card, once per page open
+  if (reduceMotion) { Web.setU(1); show('home'); into(); dyk(); return; }
+  show(null); Web.setU(0, 0); Web.go('macro', { dur: 2.4 }).then(() => { if (S.mode === 'home') { show('home'); into(); dyk(); } });   // the opening shot: zoom out from the neurons to the whole brain
 }
 function afterWho() { updateWho(); progCache = null; drawHome(); pullProg(); }
 /* the Brainwaves intro sound (bleeps, low strings on a fifth, the voice-over): plays every time the page opens (his call: "they love it").
@@ -3752,6 +3781,138 @@ addEventListener('keydown', e => {
   if (n != null) { e.preventDefault(); ppPress(n); }
   else if (e.key === 'r' || e.key === 'R') ppReplay();
 });
+</script>
+<script id="did-you-know">
+/* ---------- "Did you know?" (his idea, 2026-11-17): a fact about the brain and music pops up every time the page opens (not when coming
+   back to the brain from a game). Every fact names its source; some link to the game that trains that skill. A shuffled order is kept on this
+   device (localStorage bw_dyk_v1), so a student sees every fact once before any comes back. Preview and review list: docs/did-you-know-preview.html ---------- */
+const DYK = (() => {
+  const TOPIC = {
+    ear:   { name: 'How the ear works',     c: '#48c9f0' },
+    brain: { name: 'How the brain hears',   c: '#5fe3a4' },
+    mus:   { name: "Musicians' brains",     c: '#b58cff' },
+    pitch: { name: 'Perfect pitch',         c: '#d8ecff' },
+    feel:  { name: 'Music and feelings',    c: '#ff7a8a' },
+    baby:  { name: 'Babies and growing up', c: '#ffb25e' },
+    myth:  { name: 'Myths busted',          c: '#f4e063' },
+    safe:  { name: 'Protect your ears',     c: '#ff6fd8' },
+  };
+  const GAME = { synapse: ['Sharp or Flat?', '#5fe3a4'], intervals: ['Intervals', '#48c9f0'], chords: ['Chord Colors', '#ff7a8a'], progressions: ['Progressions', '#b58cff'],
+    voice: ['Pick a Voice', '#ffb25e'], tuner: ['Tuner', '#f4e063'], scales: ['Scales', '#ff6fd8'], pitch: ['Perfect Pitch', '#d8ecff'] };
+  const FACTS = [
+    // ---- how the ear works
+    { t: 'ear', x: 'The smallest bone in your body is in your ear. The <b>stapes</b> (stirrup) is about 3 mm long, smaller than a grain of rice, and it passes every sound into your inner ear.', s: 'Gray\'s Anatomy' },
+    { t: 'ear', x: 'Your three tiny ear bones (hammer, anvil and stirrup) work like a lever. Together with your eardrum they make sounds about <b>20 times stronger</b> before they reach the fluid inside your inner ear.', s: 'Hearing science textbooks (middle ear gain)' },
+    { t: 'ear', x: 'Your <b>cochlea</b> is a snail shell about the size of a pea. Unrolled, it would be about 3.5 cm long, and it is filled with fluid.', s: 'Gray\'s Anatomy' },
+    { t: 'ear', x: 'Your cochlea is laid out like a <b>piano keyboard</b>: high notes are sensed at the wide end and low notes at the tip. Every pitch has its own spot.', s: 'Georg von Békésy, Nobel Prize 1961', g: 'pitch' },
+    { t: 'ear', x: 'Each ear has only about <b>3,500 inner hair cells</b> that send sound to your brain, fewer than the pixels in a tiny phone icon. About 12,000 outer hair cells help them out.', s: 'Hearing science textbooks' },
+    { t: 'ear', x: 'Your ear has its own <b>amplifier</b>. Outer hair cells stretch and shrink thousands of times a second to boost quiet sounds. They even make faint sounds of their own, which doctors use to test newborn babies\' hearing.', s: 'Kemp, 1978 (otoacoustic emissions)' },
+    { t: 'ear', x: 'Your ear canal is shaped to boost sounds around <b>2,000 to 5,000 Hz</b>, right where the consonants of speech (and a baby\'s cry) live.', s: 'Hearing science textbooks (ear canal resonance)' },
+    { t: 'ear', x: 'Humans hear from about <b>20 Hz to 20,000 Hz</b>. The top end drops as you get older, so some teens hear a high "mosquito tone" that most adults can\'t.', s: 'Audiology textbooks' },
+    { t: 'ear', x: 'Your inner ear doesn\'t only hear. Right next to the cochlea, fluid-filled loops tell your brain which way your head is tilting, which is why an ear infection can make you <b>dizzy</b>.', s: 'Vestibular system, Gray\'s Anatomy' },
+    { t: 'ear', x: 'Your voice sounds strange on a recording because normally you hear yourself through your <b>skull bones</b> too, which adds extra low sound. The recording is how everyone else hears you.', s: 'Bone conduction (audiology textbooks)', g: 'voice' },
+    { t: 'ear', x: 'When two notes are slightly out of tune, you hear a wobble called <b>beats</b>. The wobble speed is the difference between them: 440 Hz and 442 Hz wobble twice a second.', s: 'Acoustics textbooks', g: 'tuner' },
+  
+    // ---- how the brain hears
+    { t: 'brain', x: 'Your brain can tell which side a sound came from by noticing it reached one ear about <b>10 millionths of a second</b> sooner than the other.', s: 'Interaural time difference studies (Mills, 1958)' },
+    { t: 'brain', x: 'A sound reaches your brainstem in less than <b>10 thousandths of a second</b>. Hearing is one of the fastest senses you have.', s: 'Auditory brainstem response (Jewett & Williston, 1971)' },
+    { t: 'brain', x: 'Your hearing brain keeps the cochlea\'s keyboard. In the <b>auditory cortex</b>, low notes and high notes are handled in neat rows, side by side.', s: 'Tonotopic maps (Formisano et al., 2003)', g: 'synapse' },
+    { t: 'brain', x: 'Your brain fills in missing notes. Old phone lines cut out the lowest sounds of a voice, but your brain still "hears" the low pitch. This is called the <b>missing fundamental</b>.', s: 'Pitch perception (Schouten, 1940)', g: 'synapse' },
+    { t: 'brain', x: 'Most people can notice a pitch change of about <b>10 to 20 cents</b> (a cent is 1/100 of a half step). Trained musicians can often hear just a few cents.', s: 'Micheyl et al., 2006', g: 'synapse' },
+    { t: 'brain', x: 'In a noisy cafeteria you can follow one friend\'s voice and tune out the rest. Scientists call it the <b>cocktail party effect</b>.', s: 'Cherry, 1953' },
+    { t: 'brain', x: 'Your brain is always <b>guessing what comes next</b> in music. When a chord breaks the pattern, your brain reacts in about a fifth of a second, even if you weren\'t paying attention.', s: 'Koelsch et al., 2000', g: 'progressions' },
+    { t: 'brain', x: 'Notes an <b>octave</b> apart sound like "the same note," higher or lower. Their frequencies are exactly 2 to 1. Even monkeys hear a melody as the same when it moves up an octave.', s: 'Wright et al., 2000', g: 'intervals' },
+    { t: 'brain', x: 'Intervals with simple number ratios, like the <b>perfect fifth</b> (3 to 2), sound smooth together. Messier ratios sound tense and clashing.', s: 'Pythagoras, and acoustics textbooks', g: 'intervals' },
+    { t: 'brain', x: 'Just <b>imagining</b> a song lights up your hearing brain almost like really listening to it. If a song you know suddenly goes quiet, your brain keeps "playing" it.', s: 'Kraemer et al., 2005', g: 'intervals' },
+    { t: 'brain', x: 'About <b>9 out of 10 people</b> get a song stuck in their head (an earworm) at least once a week.', s: 'Liikkanen, 2012' },
+    { t: 'brain', x: 'A steady beat lights up the brain\'s <b>movement areas</b>, even when you\'re sitting perfectly still. That\'s why it\'s so hard not to tap your foot.', s: 'Grahn & Brett, 2007' },
+    { t: 'brain', x: 'Music uses <b>both sides</b> of your brain. The right side is especially good at pitch and melody, and the left at fast timing, like the sounds in speech.', s: 'Zatorre et al., 2002', g: 'intervals' },
+  
+    // ---- musicians' brains
+    { t: 'mus', x: 'Musicians who started before age 7 have a thicker <b>bridge between the two halves</b> of the brain (the front of the corpus callosum).', s: 'Schlaug et al., 1995' },
+    { t: 'mus', x: 'In trained pianists, the part of the hearing brain that responds to piano tones is about <b>25% larger</b> than in people who don\'t play.', s: 'Pantev et al., 1998' },
+    { t: 'mus', x: 'Musicians are better at hearing a friend\'s voice in a <b>noisy room</b>. Their brains pick speech out of noise more clearly.', s: 'Parbery-Clark et al., 2009' },
+    { t: 'mus', x: 'Violinists have a bigger brain area for the fingers of their <b>left hand</b>, the hand that presses the strings.', s: 'Elbert et al., 1995', g: 'tuner' },
+    { t: 'mus', x: 'Professional musicians have more brain "gray matter" in areas for <b>hearing, movement and seeing</b> than amateurs, and amateurs have more than non-musicians.', s: 'Gaser & Schlaug, 2003' },
+    { t: 'mus', x: 'Practice changes the brain fast. After just <b>5 days</b> of piano practice, the brain area controlling the fingers grew. Practicing in your head (imagining) helped too.', s: 'Pascual-Leone et al., 1995' },
+    { t: 'mus', x: 'Kids in Los Angeles who took music lessons for <b>2 years</b> processed speech sounds more precisely. One year wasn\'t enough: sticking with it mattered.', s: 'Kraus et al., 2014 (Harmony Project)' },
+    { t: 'mus', x: 'Older adults who had played an instrument for <b>10 years or more</b> scored better on some memory and thinking tests than those who never played.', s: 'Hanna-Pladdy & MacKay, 2011' },
+    { t: 'mus', x: 'Musicians are better at hearing the <b>feelings in someone\'s voice</b>, like whether they sound sad, happy or worried.', s: 'Strait et al., 2009', g: 'voice' },
+  
+    // ---- perfect pitch
+    { t: 'pitch', x: 'About <b>1 in 10,000</b> people has perfect pitch: they can name a note with no starting note at all.', s: 'Estimate cited by Deutsch, 2013', g: 'pitch' },
+    { t: 'pitch', x: 'Perfect pitch is much more common in people who grew up speaking <b>tonal languages</b> like Mandarin, where the pitch of a word changes its meaning.', s: 'Deutsch et al., 2006', g: 'pitch' },
+    { t: 'pitch', x: 'Most people with perfect pitch <b>started music lessons before age 6</b>. Early training seems to matter a lot.', s: 'Baharloo et al., 1998', g: 'pitch' },
+    { t: 'pitch', x: 'In musicians with perfect pitch, the <b>planum temporale</b> on the left side is extra large. That\'s the brain area where the Perfect Pitch game lives!', s: 'Schlaug et al., 1995', g: 'pitch' },
+    { t: 'pitch', x: 'You may have a hidden pitch memory. When people sang a favorite pop song from memory, many sang it within <b>2 half steps</b> of the real key.', s: 'Levitin, 1994', g: 'pitch' },
+    { t: 'pitch', x: 'YouTube music teacher <b>Rick Beato</b> played specially written music to his son Dylan every day, starting <b>before he was born</b>. Dylan grew up with amazing perfect pitch, and Beato built an app called <b>Nuryl</b> around the idea. Scientists haven\'t tested whether music before birth causes it; for now it\'s one family\'s story.', s: 'The Strad; Nuryl launch coverage, 2016', g: 'pitch' },
+    { t: 'pitch', x: 'Are you born with perfect pitch? Partly. It <b>runs in families</b>: brothers and sisters of people with perfect pitch are many times more likely to have it. But the genes only seem to matter if music training starts early.', s: 'Baharloo et al., 2000', g: 'pitch' },
+    { t: 'pitch', x: 'In Japan, <b>22 of 24 children</b> aged 2 to 6 learned perfect pitch with a daily chord-naming game, practiced a few minutes at a time for a year or more.', s: 'Sakakibara, 2014', g: 'pitch' },
+    { t: 'pitch', x: 'Even adults can learn it! After about <b>8 weeks</b> of note-naming practice, some adults named notes as well as people with perfect pitch, and many still could months later.', s: 'Van Hedger, Heald & Nusbaum, 2019', g: 'pitch' },
+    { t: 'pitch', x: 'Most great musicians don\'t have perfect pitch. They use <b>relative pitch</b>: hearing how far one note is from another. And that can be learned by anyone.', s: 'Music psychology textbooks', g: 'intervals' },
+  
+    // ---- music and feelings
+    { t: 'feel', x: 'The chills you get from a great song are real chemistry. Your brain releases <b>dopamine</b>, the reward chemical, and it starts <b>before</b> the big moment, while you\'re waiting for it.', s: 'Salimpoor et al., 2011', g: 'chords' },
+    { t: 'feel', x: 'Music that gives you chills lights up the same <b>reward areas</b> of the brain as food and other things you love.', s: 'Blood & Zatorre, 2001', g: 'chords' },
+    { t: 'feel', x: 'Kids usually start hearing <b>major as happy and minor as sad</b> around age 6. Younger kids judge a song\'s mood mostly by how fast it is.', s: 'Dalla Bella et al., 2001', g: 'chords' },
+    { t: 'feel', x: 'When a choir sings together, the singers\' <b>heartbeats</b> start to speed up and slow down together.', s: 'Vickhoff et al., 2013', g: 'voice' },
+    { t: 'feel', x: 'Four-year-olds who made music together were <b>more helpful</b> to each other afterward than kids who played a game together without music.', s: 'Kirschner & Tomasello, 2010' },
+    { t: 'feel', x: 'People everywhere seem to like a beat around <b>120 beats per minute</b>, about 2 beats a second. That\'s close to a walking pace.', s: 'Moelants, 2002' },
+    { t: 'feel', x: 'Listening to music before surgery helps patients feel <b>less anxious</b>, according to reviews of many hospital studies.', s: 'Bradt et al., 2013 (Cochrane review)' },
+    { t: 'feel', x: 'In people with Alzheimer\'s disease, <b>musical memories</b> often last longer than other memories. The brain areas that hold them are among the last to be damaged.', s: 'Jacobsen et al., 2015' },
+  
+    // ---- babies and growing up
+    { t: 'baby', x: 'Babies start hearing in the womb at about <b>25 weeks</b>. After birth they already prefer their mother\'s voice.', s: 'Hepper & Shahidullah, 1994; DeCasper & Fifer, 1980' },
+    { t: 'baby', x: 'Newborn babies, just <b>2 or 3 days old</b>, notice when a beat is skipped in a drum rhythm.', s: 'Winkler et al., 2009' },
+    { t: 'baby', x: 'Babies only <b>4 months old</b> already prefer smooth-sounding (consonant) chords to clashing ones.', s: 'Trainor et al., 2002', g: 'chords' },
+    { t: 'baby', x: 'Babies <b>move to music</b>. Infants bounced and swayed more to music than to someone talking.', s: 'Zentner & Eerola, 2010' },
+    { t: 'baby', x: 'People in dozens of countries could tell when a song from a faraway culture was a <b>lullaby</b>, even with no idea what the words meant.', s: 'Mehr et al., 2018' },
+    { t: 'baby', x: 'Scales with five notes, called <b>pentatonic</b> scales, show up in music from many cultures around the world.', s: 'Music theory and world music textbooks', g: 'scales' },
+    { t: 'baby', x: 'Western music splits an octave into 12 half steps, but some Middle Eastern music uses <b>smaller steps</b> between them that sound "in between the keys" of a piano.', s: 'World music textbooks (maqam)', g: 'scales' },
+  
+    // ---- myths busted
+    { t: 'myth', x: '<b>Myth:</b> listening to Mozart makes you smarter. The 1993 study found a tiny boost that lasted about 15 minutes, and later studies couldn\'t repeat it. <b>Playing</b> music is what changes the brain.', s: 'Rauscher et al., 1993; Pietschnig et al., 2010' },
+    { t: 'myth', x: '<b>Myth:</b> you only use 10% of your brain. Brain scans show music alone lights up areas <b>all over</b> the brain: hearing, movement, memory and feelings.', s: 'Brain imaging studies' },
+    { t: 'myth', x: '<b>Myth:</b> lots of people are tone deaf. True tone deafness (amusia) is rare, about <b>1 in 70</b> people. Most people who think they can\'t sing just haven\'t practiced matching pitch.', s: 'Peretz & Vuvan, 2017', g: 'voice' },
+    { t: 'myth', x: '<b>Myth:</b> people are "left-brained" or "right-brained." Everyone uses both sides, and music is one of the best workouts for <b>both at once</b>.', s: 'Nielsen et al., 2013' },
+  
+    // ---- protect your ears
+    { t: 'safe', x: 'Sound at <b>85 decibels</b> (a loud cafeteria) is safe for about 8 hours. Every 3 decibels louder <b>cuts the safe time in half</b>. At 100 decibels it\'s about 15 minutes.', s: 'NIOSH (U.S. hearing safety guidelines)' },
+    { t: 'safe', x: 'Earbuds turned all the way up can go past <b>100 decibels</b>. Try the <b>60/60 rule</b>: no more than 60% volume for 60 minutes at a time.', s: 'Hearing health guidelines (WHO "Make Listening Safe")' },
+    { t: 'safe', x: 'Ringing in your ears after a concert is a warning sign that your hair cells were <b>stressed</b>. In humans, damaged hair cells don\'t grow back. Birds can regrow theirs!', s: 'Corwin & Cotanche, 1988' },
+    { t: 'safe', x: 'Professional musicians wear special <b>musicians\' earplugs</b> that turn the volume down evenly, so the music still sounds clear, just safer.', s: 'Audiology guidelines' },
+  ];
+  let O = null, shown = false;
+  const shuffle = q => { for (let i = q.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [q[i], q[j]] = [q[j], q[i]]; } return q; };
+  function nextFact() {
+    if (!O) { try { O = JSON.parse(localStorage.getItem('bw_dyk_v1') || 'null'); } catch { O = null; } if (!O || !Array.isArray(O.q) || O.n !== FACTS.length) O = { q: shuffle(FACTS.map((_, i) => i)), at: 0, n: FACTS.length }; }
+    if (O.at >= O.q.length) { const last = O.q[O.q.length - 1]; O = { q: shuffle(FACTS.map((_, i) => i).filter(i => i !== last)).concat(last), at: 0, n: FACTS.length }; }   // a new round never starts with the one just seen
+    const i = O.q[O.at++]; try { localStorage.setItem('bw_dyk_v1', JSON.stringify(O)); } catch {}
+    return i;
+  }
+  function fill(i) {
+    const f = FACTS[i], T = TOPIC[f.t], d = $('dyk');
+    d.style.setProperty('--fc', T.c); $('dyk-tag').textContent = T.name; $('dyk-fact').innerHTML = f.x; $('dyk-src').textContent = 'Source: ' + f.s;
+    const tr = $('dyk-try'), ri = f.g ? REGIONS.findIndex(r => r.id === f.g && r.ready) : -1;
+    if (ri >= 0) { tr.hidden = false; tr.dataset.r = ri; tr.style.setProperty('--gc', REGIONS[ri].color); tr.textContent = `Try it: ${REGIONS[ri].short} ▶`; } else tr.hidden = true;
+    $('dyk-count').textContent = `Fact ${O.at} of ${FACTS.length}`;
+    d.classList.remove('on'); void d.offsetWidth; d.classList.add('on');
+  }
+  function open() { $('dyk-dim').hidden = false; $('dyk').hidden = false; fill(nextFact()); $('dyk-ok').focus({ preventScroll: true }); }
+  function close() { $('dyk').classList.remove('on'); $('dyk').hidden = true; $('dyk-dim').hidden = true; }
+  $('dyk-more').onclick = () => fill(nextFact());
+  $('dyk-ok').onclick = close; $('dyk-dim').onclick = close;
+  $('dyk-try').onclick = () => { const i = +$('dyk-try').dataset.r; close(); if (S.mode === 'home' && !S.busy) enterRegion(i); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('dyk').hidden) { e.stopPropagation(); close(); } }, true);
+  return {
+    maybe() {   // once per page open, on the brain, never in a test or when a teacher's link jumps straight into an area
+      if (shown || (window.MTGTest && MTGTest.active) || S.teach) return;
+      const go = () => { if (shown || S.mode !== 'home') return; if (!$('welcome').hidden || S.busy) { setTimeout(go, 700); return; } shown = true; open(); };
+      go();
+    },
+    open, close,
+  };
+})();
 </script>
 <script id="sharp-run">
 /* =====================================================================
